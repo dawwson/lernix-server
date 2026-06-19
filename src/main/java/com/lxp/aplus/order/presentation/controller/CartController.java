@@ -3,6 +3,9 @@ package com.lxp.aplus.order.presentation.controller;
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
 import com.lxp.aplus.order.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.order.application.result.CartAddItemResult;
+import com.lxp.aplus.order.application.result.CartGetItemsResult;
+import com.lxp.aplus.order.application.result.CartRemoveItemResult;
 import com.lxp.aplus.order.application.usecase.CartCommandUseCase;
 import com.lxp.aplus.order.presentation.request.CartAddItemRequest;
 import com.lxp.aplus.order.presentation.response.CartAddItemResponse;
@@ -27,7 +30,8 @@ public class CartController {
             @Authenticated Long userId
     ) {
 
-        CartGetItemsResponse response = cartCommandUseCase.getCartItems(userId);
+        CartGetItemsResult result = cartCommandUseCase.getCartItems(userId);
+        CartGetItemsResponse response = CartGetItemsResponse.from(result);
 
         return ResponseEntity
                 .status(CART_GET_ITEMS_SUCCESS.getStatus())
@@ -40,7 +44,8 @@ public class CartController {
             @RequestBody @Valid CartAddItemRequest request
     ) {
 
-        CartAddItemResponse response = cartCommandUseCase.addCartItemToCart(request.toCommand(userId));
+        CartAddItemResult result = cartCommandUseCase.addCartItemToCart(request.toCommand(userId));
+        CartAddItemResponse response = CartAddItemResponse.from(result);
 
         return ResponseEntity
                 .status(CART_ADD_ITEM_SUCCESS.getStatus())
@@ -53,7 +58,8 @@ public class CartController {
             @PathVariable Long cartItemId
     ) {
         CartRemoveItemCommand command = CartRemoveItemCommand.of(userId, cartItemId);
-        CartRemoveItemResponse response = cartCommandUseCase.removeCartItemFromCart(command);
+        CartRemoveItemResult result = cartCommandUseCase.removeCartItemFromCart(command);
+        CartRemoveItemResponse response = CartRemoveItemResponse.from(result);
 
         return ResponseEntity
                 .status(CART_REMOVE_ITEM_SUCCESS.getStatus())
