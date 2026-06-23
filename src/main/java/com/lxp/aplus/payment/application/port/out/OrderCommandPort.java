@@ -1,7 +1,7 @@
 package com.lxp.aplus.payment.application.port.out;
 
-import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,5 +21,5 @@ public interface OrderCommandPort {
     /*
      * 주문ID로 주문 항목 조회
      */
-    List<OrderItem> getOrderItemsOfOrder(String orderId);
+    List<OrderItemSnapshot> getOrderItemsOfOrder(String orderId);
 }

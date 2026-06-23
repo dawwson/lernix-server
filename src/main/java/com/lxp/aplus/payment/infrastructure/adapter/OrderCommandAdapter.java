@@ -8,6 +8,7 @@ import com.lxp.aplus.course.domain.CourseRepository;
 import com.lxp.aplus.order.application.CoursePrice;
 import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderRepository;
 import com.lxp.aplus.payment.application.port.out.OrderCommandPort;
@@ -73,13 +74,18 @@ public class OrderCommandAdapter implements OrderCommandPort {
         order.completeWithApprovedPayment(approvedPaymentId, approvedAmount);
     }
 
-    public List<OrderItem> getOrderItemsOfOrder(String orderId) {
+    public List<OrderItemSnapshot> getOrderItemsOfOrder(String orderId) {
 
         // 1. Order 조회
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND));
 
         // 2. Order의 OrderItem 리스트 조회
-        return order.getOrderItems();
+        return order.getOrderItems().stream()
+                .map(orderItem -> OrderItemSnapshot.of(
+                        orderItem.getItemId(),
+                        orderItem.getOrderItemId()
+                ))
+                .toList();
     }
 }

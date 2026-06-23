@@ -2,10 +2,10 @@ package com.lxp.aplus.payment.application.usecase;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
-import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
 import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
@@ -73,12 +73,12 @@ public class PaymentCommandUseCase {
 
         // 6. 수강 권한 부여
         // TODO: 향후 이벤트로 처리
-        List<OrderItem> orderItems = orderCommandPort.getOrderItemsOfOrder(command.orderId());
+        List<OrderItemSnapshot> orderItems = orderCommandPort.getOrderItemsOfOrder(command.orderId());
 
         Map<Long, Long> courseToOrderItemMap = orderItems.stream()
                         .collect(Collectors.toMap(
-                                OrderItem::getItemId,      // courseId
-                                OrderItem::getOrderItemId  // 실제 PK
+                                OrderItemSnapshot::courseId,
+                                OrderItemSnapshot::orderItemId  // 실제 PK
                         ));
 
         log.debug("수강 신청 매핑 정보: {}", courseToOrderItemMap);
