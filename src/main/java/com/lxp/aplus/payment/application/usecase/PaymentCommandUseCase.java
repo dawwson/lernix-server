@@ -6,12 +6,12 @@ import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
 import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
 import com.lxp.aplus.payment.application.port.out.OrderCommandPort;
 import com.lxp.aplus.payment.domain.Payment;
 import com.lxp.aplus.payment.domain.PaymentRepository;
-import com.lxp.aplus.payment.presentation.response.PaymentPrepareResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class PaymentCommandUseCase {
     private final OrderQueryPort orderQueryPort;
     private final EnrollmentCommandPort enrollmentCommandPort;
 
-    public PaymentPrepareResponse prepare(PaymentPrepareCommand command) {
+    public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
 
         // 1. Order 생성 (From Order BC)
         OrderCreateResult orderResult = orderCommandPort.createOrderFromCourseIds(
@@ -49,7 +49,7 @@ public class PaymentCommandUseCase {
         paymentRepository.save(payment);
 
         // 3. 결과 반환
-        return PaymentPrepareResponse.from(payment);
+        return PaymentPrepareResult.from(payment);
     }
 
     public void confirm(PaymentConfirmCommand command) {
