@@ -33,12 +33,15 @@ public class OrderCommandAdapter implements OrderCommandPort {
         List<CoursePrice> coursePrices = getCoursePriceByIds(courseIds);
 
         // 2. OrderItem 리스트 생성
-        List<OrderItem> OrderItems = coursePrices.stream()
-                .map(OrderItem::create)
+        List<OrderItem> orderItems = coursePrices.stream()
+                .map(coursePrice -> OrderItem.createCourseItem(
+                        coursePrice.courseId(),
+                        BigDecimal.valueOf(coursePrice.price())
+                ))
                 .toList();
 
         // 3. Order 생성 및 저장
-        Order order = Order.create(userId, OrderItems);
+        Order order = Order.create(userId, orderItems);
         orderRepository.save(order);
 
         return OrderCreateResult.of(order.getOrderId(), order.getAmount());
