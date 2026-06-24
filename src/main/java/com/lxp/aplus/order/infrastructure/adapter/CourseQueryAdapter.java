@@ -5,7 +5,6 @@ import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
 import com.lxp.aplus.course.domain.CourseStatus;
-import com.lxp.aplus.course.infrastructure.file.FileUrlGenerator;
 import com.lxp.aplus.order.application.port.out.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.CourseSalesStatus;
 import com.lxp.aplus.order.application.port.out.CourseSnapshot;
@@ -36,7 +35,6 @@ public class CourseQueryAdapter implements CourseQueryPort {
     // TODO: Repository 대신 HTTP/gRPC를 호출하는 외부 모듈 주입
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
-    private final FileUrlGenerator fileUrlGenerator;
 
     /**
      * 단일 강좌의 판매 가능 여부 확인
