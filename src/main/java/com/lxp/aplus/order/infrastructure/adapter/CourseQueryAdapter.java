@@ -67,7 +67,10 @@ public class CourseQueryAdapter implements CourseQueryPort {
         return courses.stream()
                 .collect(Collectors.toMap(
                         Course::getId,
-                        course -> new CourseSalesStatus(course.getPrice(), course.getCourseStatus())
+                        course -> new CourseSalesStatus(
+                                course.getPrice(),
+                                course.getCourseStatus() == CourseStatus.PUBLISHED
+                        )
                 ));
     }
 
@@ -101,7 +104,7 @@ public class CourseQueryAdapter implements CourseQueryPort {
                             return CourseSnapshot.builder()
                                     .courseId(course.getId())
                                     .courseTitle(course.getTitle())
-                                    .courseStatus(course.getCourseStatus())
+                                    .courseStatus(course.getCourseStatus().name())
                                     .instructorName(instructor.getNickName())
                                     .thumbnailUrl(course.getThumbnailResourceKey())
                                     .price(course.getPrice())

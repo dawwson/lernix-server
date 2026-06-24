@@ -2,7 +2,6 @@ package com.lxp.aplus.order.application.usecase;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CartErrorCode;
-import com.lxp.aplus.course.domain.CourseStatus;
 import com.lxp.aplus.order.application.command.CartAddItemCommand;
 import com.lxp.aplus.order.application.command.CartRemoveItemCommand;
 import com.lxp.aplus.order.application.port.out.CourseQueryPort;
@@ -96,7 +95,7 @@ public class CartCommandUseCase {
                     CourseSalesStatus courseSalesStatus = courseSalesStatusMap.get(cartItem.getCourseId());
 
                     // PUBLISHED 강좌만 가격 반환
-                    if (courseSalesStatus != null && courseSalesStatus.status() == CourseStatus.PUBLISHED) {
+                    if (courseSalesStatus != null && courseSalesStatus.published()) {
                         return courseSalesStatus.price();
                     }
 

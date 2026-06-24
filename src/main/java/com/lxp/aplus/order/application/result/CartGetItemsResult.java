@@ -34,7 +34,7 @@ public record CartGetItemsResult(
                             .cartItemId(cartItem.getId())
                             .courseId(courseSnapshot.courseId())
                             .courseTitle(courseSnapshot.courseTitle())
-                            .courseStatus(courseSnapshot.courseStatus().name())
+                            .courseStatus(courseSnapshot.courseStatus())
                             .instructorName(courseSnapshot.instructorName())
                             .thumbnailUrl(courseSnapshot.thumbnailUrl())
                             .price(courseSnapshot.price())

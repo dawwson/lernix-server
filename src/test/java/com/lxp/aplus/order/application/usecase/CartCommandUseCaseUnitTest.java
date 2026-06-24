@@ -9,7 +9,6 @@ import com.lxp.aplus.order.application.port.out.CourseSnapshot;
 import com.lxp.aplus.order.application.result.CartAddItemResult;
 import com.lxp.aplus.order.application.result.CartGetItemsResult;
 import com.lxp.aplus.order.application.result.CartRemoveItemResult;
-import com.lxp.aplus.course.domain.CourseStatus;
 import com.lxp.aplus.order.domain.Cart;
 import com.lxp.aplus.order.domain.CartItem;
 import com.lxp.aplus.order.domain.CartRepository;
@@ -67,7 +66,7 @@ class CartCommandUseCaseUnitTest {
 
         given(courseQueryPort.isCoursePublished(courseId)).willReturn(true);
         given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
-                .willReturn(Map.of(courseId, new CourseSalesStatus(price, CourseStatus.PUBLISHED)));
+                .willReturn(Map.of(courseId, new CourseSalesStatus(price, true)));
 
         // when
         CartAddItemResult result = cartCommandUseCase.addCartItemToCart(new CartAddItemCommand(USER_ID, courseId));
@@ -102,8 +101,8 @@ class CartCommandUseCaseUnitTest {
         // 가격표 셋업: 삭제 후 남은 2번 강의(2L)의 가격이 필요함
         given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
                 .willReturn(Map.of(
-                        1L, new CourseSalesStatus(10000, CourseStatus.PUBLISHED),
-                        2L, new CourseSalesStatus(30000, CourseStatus.PUBLISHED)
+                        1L, new CourseSalesStatus(10000, true),
+                        2L, new CourseSalesStatus(30000, true)
                 ));
 
         // 4. when: 삭제 실행
@@ -135,13 +134,13 @@ class CartCommandUseCaseUnitTest {
         given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
         given(courseQueryPort.getCourseSnapshot(anyList()))
                 .willReturn(Map.of(
-                        1L, new CourseSnapshot(1L, "Java Basic", CourseStatus.PUBLISHED, "강사1", "thumb1", 10000),
-                        2L, new CourseSnapshot(2L, "Spring Basic", CourseStatus.PUBLISHED, "강사2", "thumb2", 30000)
+                        1L, new CourseSnapshot(1L, "Java Basic", "PUBLISHED", "강사1", "thumb1", 10000),
+                        2L, new CourseSnapshot(2L, "Spring Basic", "PUBLISHED", "강사2", "thumb2", 30000)
                 ));
         given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
                 .willReturn(Map.of(
-                        1L, new CourseSalesStatus(10000, CourseStatus.PUBLISHED),
-                        2L, new CourseSalesStatus(30000, CourseStatus.PUBLISHED)
+                        1L, new CourseSalesStatus(10000, true),
+                        2L, new CourseSalesStatus(30000, true)
                 ));
 
         // when
