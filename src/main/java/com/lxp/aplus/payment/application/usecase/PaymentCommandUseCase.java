@@ -3,7 +3,6 @@ package com.lxp.aplus.payment.application.usecase;
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
-import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
 import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
@@ -29,7 +28,6 @@ public class PaymentCommandUseCase {
 
     private final PaymentRepository paymentRepository;
     private final OrderCommandPort orderCommandPort;
-    private final OrderQueryPort orderQueryPort;
     private final EnrollmentCommandPort enrollmentCommandPort;
 
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
@@ -68,8 +66,6 @@ public class PaymentCommandUseCase {
 
         // 5. Payment 저장
         paymentRepository.save(payment);
-
-        List<Long> courseIds = orderQueryPort.getCourseIdsByOrderId(command.orderId());
 
         // 6. 수강 권한 부여
         // TODO: 향후 이벤트로 처리
