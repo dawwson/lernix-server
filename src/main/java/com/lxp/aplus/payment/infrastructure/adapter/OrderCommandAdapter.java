@@ -5,7 +5,6 @@ import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
-import com.lxp.aplus.order.application.CoursePrice;
 import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
 import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
@@ -87,5 +86,11 @@ public class OrderCommandAdapter implements OrderCommandPort {
                         orderItem.getOrderItemId()
                 ))
                 .toList();
+    }
+
+    private record CoursePrice(
+            Long courseId,
+            int price
+    ) {
     }
 }
