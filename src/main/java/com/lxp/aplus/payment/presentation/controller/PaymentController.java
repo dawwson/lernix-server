@@ -2,6 +2,7 @@ package com.lxp.aplus.payment.presentation.controller;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
+import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.usecase.PaymentCommandUseCase;
 import com.lxp.aplus.payment.presentation.request.PaymentConfirmRequest;
 import com.lxp.aplus.payment.presentation.request.PaymentPrepareRequest;
@@ -27,7 +28,8 @@ public class PaymentController {
             @RequestBody @Valid PaymentPrepareRequest request
     ) {
 
-        PaymentPrepareResponse response = paymentCommandUseCase.prepare(request.toCommand(userId));
+        PaymentPrepareResult result = paymentCommandUseCase.prepare(request.toCommand(userId));
+        PaymentPrepareResponse response = PaymentPrepareResponse.from(result);
 
         return ResponseEntity
                 .status(PAYMENT_PREPARE_SUCCESS.getStatus())

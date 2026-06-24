@@ -5,9 +5,9 @@ import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
-import com.lxp.aplus.order.application.CoursePrice;
 import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderRepository;
 import com.lxp.aplus.payment.application.port.out.OrderCommandPort;
@@ -33,12 +33,15 @@ public class OrderCommandAdapter implements OrderCommandPort {
         List<CoursePrice> coursePrices = getCoursePriceByIds(courseIds);
 
         // 2. OrderItem 리스트 생성
-        List<OrderItem> OrderItems = coursePrices.stream()
-                .map(OrderItem::create)
+        List<OrderItem> orderItems = coursePrices.stream()
+                .map(coursePrice -> OrderItem.createCourseItem(
+                        coursePrice.courseId(),
+                        BigDecimal.valueOf(coursePrice.price())
+                ))
                 .toList();
 
         // 3. Order 생성 및 저장
-        Order order = Order.create(userId, OrderItems);
+        Order order = Order.create(userId, orderItems);
         orderRepository.save(order);
 
         return OrderCreateResult.of(order.getOrderId(), order.getAmount());
@@ -70,13 +73,24 @@ public class OrderCommandAdapter implements OrderCommandPort {
         order.completeWithApprovedPayment(approvedPaymentId, approvedAmount);
     }
 
-    public List<OrderItem> getOrderItemsOfOrder(String orderId) {
+    public List<OrderItemSnapshot> getOrderItemsOfOrder(String orderId) {
 
         // 1. Order 조회
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND));
 
         // 2. Order의 OrderItem 리스트 조회
-        return order.getOrderItems();
+        return order.getOrderItems().stream()
+                .map(orderItem -> OrderItemSnapshot.of(
+                        orderItem.getItemId(),
+                        orderItem.getOrderItemId()
+                ))
+                .toList();
+    }
+
+    private record CoursePrice(
+            Long courseId,
+            int price
+    ) {
     }
 }

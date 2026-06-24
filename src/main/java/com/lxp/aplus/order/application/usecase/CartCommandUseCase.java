@@ -2,18 +2,17 @@ package com.lxp.aplus.order.application.usecase;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CartErrorCode;
-import com.lxp.aplus.course.domain.CourseStatus;
 import com.lxp.aplus.order.application.command.CartAddItemCommand;
 import com.lxp.aplus.order.application.command.CartRemoveItemCommand;
 import com.lxp.aplus.order.application.port.out.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.CourseSalesStatus;
 import com.lxp.aplus.order.application.port.out.CourseSnapshot;
+import com.lxp.aplus.order.application.result.CartAddItemResult;
+import com.lxp.aplus.order.application.result.CartGetItemsResult;
+import com.lxp.aplus.order.application.result.CartRemoveItemResult;
 import com.lxp.aplus.order.domain.Cart;
 import com.lxp.aplus.order.domain.CartItem;
 import com.lxp.aplus.order.domain.CartRepository;
-import com.lxp.aplus.order.presentation.response.CartAddItemResponse;
-import com.lxp.aplus.order.presentation.response.CartGetItemsResponse;
-import com.lxp.aplus.order.presentation.response.CartRemoveItemResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +33,7 @@ public class CartCommandUseCase {
      * - 추가 후 장바구니의 실시간 상태를 반영하기 위해 전체 금액을 재계산한다.
      * - Port를 통해 외부 도메인(Course)의 가격 정보를 간접적으로 참조한다.
      */
-    public CartAddItemResponse addCartItemToCart(CartAddItemCommand command) {
+    public CartAddItemResult addCartItemToCart(CartAddItemCommand command) {
 
         // 1. 요청된 강좌가 발행된 상태인지 검사
         if (!courseQueryPort.isCoursePublished(command.courseId())) {
@@ -53,13 +52,13 @@ public class CartCommandUseCase {
         // 5. 장바구니에 담긴 모든 강좌의 가격 조회
         int amount = calculateCartAmount(cart);
 
-        return CartAddItemResponse.of(cart, command.courseId(), amount);
+        return CartAddItemResult.of(cart, command.courseId(), amount);
     }
 
     /*
      * 장바구니에서 특정 항목을 제거한다.
      */
-    public CartRemoveItemResponse removeCartItemFromCart(CartRemoveItemCommand command) {
+    public CartRemoveItemResult removeCartItemFromCart(CartRemoveItemCommand command) {
         // 1. cart 조회 (없으면 생성)
         Cart cart = getOrCreateCart(command.userId());
 
@@ -69,7 +68,7 @@ public class CartCommandUseCase {
         // 3. 장바구니에 담긴 모든 강좌의 가격 조회
         int amount = calculateCartAmount(cart);
 
-        return CartRemoveItemResponse.of(cart, command.cartItemId(), amount);
+        return CartRemoveItemResult.of(cart, command.cartItemId(), amount);
     }
 
     /*
@@ -96,7 +95,7 @@ public class CartCommandUseCase {
                     CourseSalesStatus courseSalesStatus = courseSalesStatusMap.get(cartItem.getCourseId());
 
                     // PUBLISHED 강좌만 가격 반환
-                    if (courseSalesStatus != null && courseSalesStatus.status() == CourseStatus.PUBLISHED) {
+                    if (courseSalesStatus != null && courseSalesStatus.published()) {
                         return courseSalesStatus.price();
                     }
 
@@ -106,7 +105,7 @@ public class CartCommandUseCase {
                 .sum();
     }
 
-    public CartGetItemsResponse getCartItems(Long userId) {
+    public CartGetItemsResult getCartItems(Long userId) {
 
         // 1. 장바구니 조회
         Cart cart = getOrCreateCart(userId);
@@ -116,12 +115,12 @@ public class CartCommandUseCase {
 
         // 3. 응답 DTO 변환 및 반환
         if (cartItems.isEmpty()) {
-            return CartGetItemsResponse.empty(cart.getId());
+            return CartGetItemsResult.empty(cart.getId());
         }
 
         Map<Long, CourseSnapshot> courseSnapshotMap = courseQueryPort.getCourseSnapshot(cart.getCourseIds());
         int totalAmount = calculateCartAmount(cart);
 
-        return CartGetItemsResponse.of(cart, courseSnapshotMap, totalAmount);
+        return CartGetItemsResult.of(cart, courseSnapshotMap, totalAmount);
     }
 }

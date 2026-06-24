@@ -2,16 +2,15 @@ package com.lxp.aplus.payment.application.usecase;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
-import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
-import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
+import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
 import com.lxp.aplus.payment.application.port.out.OrderCommandPort;
 import com.lxp.aplus.payment.domain.Payment;
 import com.lxp.aplus.payment.domain.PaymentRepository;
-import com.lxp.aplus.payment.presentation.response.PaymentPrepareResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,10 +28,9 @@ public class PaymentCommandUseCase {
 
     private final PaymentRepository paymentRepository;
     private final OrderCommandPort orderCommandPort;
-    private final OrderQueryPort orderQueryPort;
     private final EnrollmentCommandPort enrollmentCommandPort;
 
-    public PaymentPrepareResponse prepare(PaymentPrepareCommand command) {
+    public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
 
         // 1. Order 생성 (From Order BC)
         OrderCreateResult orderResult = orderCommandPort.createOrderFromCourseIds(
@@ -49,7 +47,7 @@ public class PaymentCommandUseCase {
         paymentRepository.save(payment);
 
         // 3. 결과 반환
-        return PaymentPrepareResponse.from(payment);
+        return PaymentPrepareResult.from(payment);
     }
 
     public void confirm(PaymentConfirmCommand command) {
@@ -69,16 +67,14 @@ public class PaymentCommandUseCase {
         // 5. Payment 저장
         paymentRepository.save(payment);
 
-        List<Long> courseIds = orderQueryPort.getCourseIdsByOrderId(command.orderId());
-
         // 6. 수강 권한 부여
         // TODO: 향후 이벤트로 처리
-        List<OrderItem> orderItems = orderCommandPort.getOrderItemsOfOrder(command.orderId());
+        List<OrderItemSnapshot> orderItems = orderCommandPort.getOrderItemsOfOrder(command.orderId());
 
         Map<Long, Long> courseToOrderItemMap = orderItems.stream()
                         .collect(Collectors.toMap(
-                                OrderItem::getItemId,      // courseId
-                                OrderItem::getOrderItemId  // 실제 PK
+                                OrderItemSnapshot::courseId,
+                                OrderItemSnapshot::orderItemId  // 실제 PK
                         ));
 
         log.debug("수강 신청 매핑 정보: {}", courseToOrderItemMap);

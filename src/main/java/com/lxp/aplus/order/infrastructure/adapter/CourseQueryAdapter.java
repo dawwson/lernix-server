@@ -5,7 +5,6 @@ import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
 import com.lxp.aplus.course.domain.CourseStatus;
-import com.lxp.aplus.course.infrastructure.file.FileUrlGenerator;
 import com.lxp.aplus.order.application.port.out.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.CourseSalesStatus;
 import com.lxp.aplus.order.application.port.out.CourseSnapshot;
@@ -36,7 +35,6 @@ public class CourseQueryAdapter implements CourseQueryPort {
     // TODO: Repository 대신 HTTP/gRPC를 호출하는 외부 모듈 주입
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
-    private final FileUrlGenerator fileUrlGenerator;
 
     /**
      * 단일 강좌의 판매 가능 여부 확인
@@ -67,7 +65,10 @@ public class CourseQueryAdapter implements CourseQueryPort {
         return courses.stream()
                 .collect(Collectors.toMap(
                         Course::getId,
-                        course -> new CourseSalesStatus(course.getPrice(), course.getCourseStatus())
+                        course -> new CourseSalesStatus(
+                                course.getPrice(),
+                                course.getCourseStatus() == CourseStatus.PUBLISHED
+                        )
                 ));
     }
 
@@ -101,7 +102,7 @@ public class CourseQueryAdapter implements CourseQueryPort {
                             return CourseSnapshot.builder()
                                     .courseId(course.getId())
                                     .courseTitle(course.getTitle())
-                                    .courseStatus(course.getCourseStatus())
+                                    .courseStatus(course.getCourseStatus().name())
                                     .instructorName(instructor.getNickName())
                                     .thumbnailUrl(course.getThumbnailResourceKey())
                                     .price(course.getPrice())

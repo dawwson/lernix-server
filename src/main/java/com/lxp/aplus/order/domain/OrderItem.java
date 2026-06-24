@@ -1,7 +1,6 @@
 package com.lxp.aplus.order.domain;
 
 import com.lxp.aplus.common.domain.BaseTimeEntity;
-import com.lxp.aplus.order.application.CoursePrice;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -81,11 +80,11 @@ public class OrderItem extends BaseTimeEntity {
         this.order = order;
     }
 
-    public static OrderItem create(CoursePrice coursePrice) {
+    public static OrderItem createCourseItem(Long courseId, BigDecimal price) {
         return new OrderItem(
                 ItemType.COURSE,
-                coursePrice.courseId(),
-                BigDecimal.valueOf(coursePrice.price()) // int -> BigDecimal
+                courseId,
+                price
         );
     }
 }
