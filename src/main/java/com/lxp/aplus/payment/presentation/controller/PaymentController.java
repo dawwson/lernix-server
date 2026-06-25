@@ -2,8 +2,8 @@ package com.lxp.aplus.payment.presentation.controller;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
+import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
-import com.lxp.aplus.payment.application.usecase.PaymentCommandUseCase;
 import com.lxp.aplus.payment.presentation.request.PaymentConfirmRequest;
 import com.lxp.aplus.payment.presentation.request.PaymentPrepareRequest;
 import com.lxp.aplus.payment.presentation.response.PaymentPrepareResponse;
@@ -20,7 +20,7 @@ import static com.lxp.aplus.common.result.code.PaymentResultCode.PAYMENT_PREPARE
 @RequiredArgsConstructor
 public class PaymentController {
 
-    private final PaymentCommandUseCase paymentCommandUseCase;
+    private final PaymentUseCase paymentUseCase;
 
     @PostMapping("/prepare")
     public ResponseEntity<ResultResponse<PaymentPrepareResponse>> preparePayment(
@@ -28,7 +28,7 @@ public class PaymentController {
             @RequestBody @Valid PaymentPrepareRequest request
     ) {
 
-        PaymentPrepareResult result = paymentCommandUseCase.prepare(request.toCommand(userId));
+        PaymentPrepareResult result = paymentUseCase.prepare(request.toCommand(userId));
         PaymentPrepareResponse response = PaymentPrepareResponse.from(result);
 
         return ResponseEntity
@@ -42,7 +42,7 @@ public class PaymentController {
             @RequestBody @Valid PaymentConfirmRequest request
     ) {
 
-        paymentCommandUseCase.confirm(request.toCommand(userId));
+        paymentUseCase.confirm(request.toCommand(userId));
 
         return ResponseEntity
                 .status(PAYMENT_CONFIRM_SUCCESS.getStatus())
