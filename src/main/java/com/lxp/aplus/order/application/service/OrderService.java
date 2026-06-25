@@ -3,7 +3,7 @@ package com.lxp.aplus.order.application.service;
 import com.lxp.aplus.order.application.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
 import com.lxp.aplus.order.application.port.out.CoursePrice;
-import com.lxp.aplus.order.application.port.out.CoursePriceQueryPort;
+import com.lxp.aplus.order.application.port.out.CourseQueryPort;
 import com.lxp.aplus.order.application.result.OrderCreateResult;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
@@ -21,11 +21,11 @@ import java.util.List;
 public class OrderService implements OrderUseCase {
 
     private final OrderRepository orderRepository;
-    private final CoursePriceQueryPort coursePriceQueryPort;
+    private final CourseQueryPort courseQueryPort;
 
     @Override
     public OrderCreateResult createOrder(OrderCreateCommand command) {
-        List<CoursePrice> coursePrices = coursePriceQueryPort.getCoursePriceByIds(command.courseIds());
+        List<CoursePrice> coursePrices = courseQueryPort.getCoursePriceByIds(command.courseIds());
 
         List<OrderItem> orderItems = coursePrices.stream()
                 .map(coursePrice -> OrderItem.createCourseItem(
