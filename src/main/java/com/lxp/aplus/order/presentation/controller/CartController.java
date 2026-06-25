@@ -3,10 +3,10 @@ package com.lxp.aplus.order.presentation.controller;
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
 import com.lxp.aplus.order.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.order.application.port.in.CartUseCase;
 import com.lxp.aplus.order.application.result.CartAddItemResult;
 import com.lxp.aplus.order.application.result.CartGetItemsResult;
 import com.lxp.aplus.order.application.result.CartRemoveItemResult;
-import com.lxp.aplus.order.application.usecase.CartCommandUseCase;
 import com.lxp.aplus.order.presentation.request.CartAddItemRequest;
 import com.lxp.aplus.order.presentation.response.CartAddItemResponse;
 import com.lxp.aplus.order.presentation.response.CartGetItemsResponse;
@@ -23,14 +23,14 @@ import static com.lxp.aplus.common.result.code.CartResultCode.*;
 @RequiredArgsConstructor
 public class CartController {
 
-    private final CartCommandUseCase cartCommandUseCase;
+    private final CartUseCase cartUseCase;
 
     @GetMapping
     public ResponseEntity<ResultResponse<CartGetItemsResponse>> getCartAllItems(
             @Authenticated Long userId
     ) {
 
-        CartGetItemsResult result = cartCommandUseCase.getCartItems(userId);
+        CartGetItemsResult result = cartUseCase.getCartItems(userId);
         CartGetItemsResponse response = CartGetItemsResponse.from(result);
 
         return ResponseEntity
@@ -44,7 +44,7 @@ public class CartController {
             @RequestBody @Valid CartAddItemRequest request
     ) {
 
-        CartAddItemResult result = cartCommandUseCase.addCartItemToCart(request.toCommand(userId));
+        CartAddItemResult result = cartUseCase.addCartItemToCart(request.toCommand(userId));
         CartAddItemResponse response = CartAddItemResponse.from(result);
 
         return ResponseEntity
@@ -58,7 +58,7 @@ public class CartController {
             @PathVariable Long cartItemId
     ) {
         CartRemoveItemCommand command = CartRemoveItemCommand.of(userId, cartItemId);
-        CartRemoveItemResult result = cartCommandUseCase.removeCartItemFromCart(command);
+        CartRemoveItemResult result = cartUseCase.removeCartItemFromCart(command);
         CartRemoveItemResponse response = CartRemoveItemResponse.from(result);
 
         return ResponseEntity

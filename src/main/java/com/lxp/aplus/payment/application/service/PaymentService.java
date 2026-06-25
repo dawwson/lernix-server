@@ -1,7 +1,8 @@
-package com.lxp.aplus.payment.application.usecase;
+package com.lxp.aplus.payment.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
+import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
 import com.lxp.aplus.payment.application.result.OrderCreateResult;
 import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
@@ -24,12 +25,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class PaymentCommandUseCase {
+public class PaymentService implements PaymentUseCase {
 
     private final PaymentRepository paymentRepository;
     private final OrderCommandPort orderCommandPort;
     private final EnrollmentCommandPort enrollmentCommandPort;
 
+    @Override
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
 
         // 1. Order 생성 (From Order BC)
@@ -50,6 +52,7 @@ public class PaymentCommandUseCase {
         return PaymentPrepareResult.from(payment);
     }
 
+    @Override
     public void confirm(PaymentConfirmCommand command) {
         // 1. Payment 조회
         Payment payment = paymentRepository.findByOrderId(command.orderId())

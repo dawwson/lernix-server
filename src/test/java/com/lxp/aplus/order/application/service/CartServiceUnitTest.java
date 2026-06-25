@@ -1,4 +1,4 @@
-package com.lxp.aplus.order.application.usecase;
+package com.lxp.aplus.order.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.order.application.command.CartAddItemCommand;
@@ -31,8 +31,8 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CartCommandUseCase 단위 테스트")
-class CartCommandUseCaseUnitTest {
+@DisplayName("CartService 단위 테스트")
+class CartServiceUnitTest {
 
     @Mock
     private CartRepository cartRepository;
@@ -41,7 +41,7 @@ class CartCommandUseCaseUnitTest {
     private CourseQueryPort courseQueryPort;
 
     @InjectMocks
-    private CartCommandUseCase cartCommandUseCase;
+    private CartService cartService;
 
     private final Long USER_ID = 1L;
 
@@ -69,7 +69,7 @@ class CartCommandUseCaseUnitTest {
                 .willReturn(Map.of(courseId, new CourseSalesStatus(price, true)));
 
         // when
-        CartAddItemResult result = cartCommandUseCase.addCartItemToCart(new CartAddItemCommand(USER_ID, courseId));
+        CartAddItemResult result = cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, courseId));
 
         // then: 추가된 courseId와 계산된 금액이 정확한지 확인
         assertThat(result.cartId()).isEqualTo(10L);
@@ -106,7 +106,7 @@ class CartCommandUseCaseUnitTest {
                 ));
 
         // 4. when: 삭제 실행
-        CartRemoveItemResult result = cartCommandUseCase.removeCartItemFromCart(
+        CartRemoveItemResult result = cartService.removeCartItemFromCart(
                 new CartRemoveItemCommand(USER_ID, targetItemId));
 
         // 5. then: 검증
@@ -144,7 +144,7 @@ class CartCommandUseCaseUnitTest {
                 ));
 
         // when
-        CartGetItemsResult result = cartCommandUseCase.getCartItems(USER_ID);
+        CartGetItemsResult result = cartService.getCartItems(USER_ID);
 
         // then
         assertThat(result.cartId()).isEqualTo(10L);
@@ -166,7 +166,7 @@ class CartCommandUseCaseUnitTest {
 
         // when & then: 중복 추가 시 도메인 규칙 위반으로 예외 발생 확인
         assertThatThrownBy(() ->
-                cartCommandUseCase.addCartItemToCart(new CartAddItemCommand(USER_ID, 100L))
+                cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, 100L))
         ).isInstanceOf(BusinessException.class);
     }
 
@@ -179,7 +179,7 @@ class CartCommandUseCaseUnitTest {
 
         // when & then: 없는 ID(999L) 삭제 시도
         assertThatThrownBy(() ->
-                cartCommandUseCase.removeCartItemFromCart(new CartRemoveItemCommand(USER_ID, 999L))
+                cartService.removeCartItemFromCart(new CartRemoveItemCommand(USER_ID, 999L))
         ).isInstanceOf(BusinessException.class);
     }
 }

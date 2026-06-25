@@ -1,9 +1,10 @@
-package com.lxp.aplus.order.application.usecase;
+package com.lxp.aplus.order.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CartErrorCode;
 import com.lxp.aplus.order.application.command.CartAddItemCommand;
 import com.lxp.aplus.order.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.order.application.port.in.CartUseCase;
 import com.lxp.aplus.order.application.port.out.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.CourseSalesStatus;
 import com.lxp.aplus.order.application.port.out.CourseSnapshot;
@@ -23,7 +24,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class CartCommandUseCase {
+public class CartService implements CartUseCase {
 
     private final CartRepository cartRepository;
     private final CourseQueryPort courseQueryPort;
@@ -33,6 +34,7 @@ public class CartCommandUseCase {
      * - 추가 후 장바구니의 실시간 상태를 반영하기 위해 전체 금액을 재계산한다.
      * - Port를 통해 외부 도메인(Course)의 가격 정보를 간접적으로 참조한다.
      */
+    @Override
     public CartAddItemResult addCartItemToCart(CartAddItemCommand command) {
 
         // 1. 요청된 강좌가 발행된 상태인지 검사
@@ -58,6 +60,7 @@ public class CartCommandUseCase {
     /*
      * 장바구니에서 특정 항목을 제거한다.
      */
+    @Override
     public CartRemoveItemResult removeCartItemFromCart(CartRemoveItemCommand command) {
         // 1. cart 조회 (없으면 생성)
         Cart cart = getOrCreateCart(command.userId());
@@ -105,6 +108,7 @@ public class CartCommandUseCase {
                 .sum();
     }
 
+    @Override
     public CartGetItemsResult getCartItems(Long userId) {
 
         // 1. 장바구니 조회
