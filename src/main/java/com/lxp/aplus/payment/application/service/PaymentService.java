@@ -4,8 +4,9 @@ import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
-import com.lxp.aplus.payment.application.result.OrderCreateResult;
+import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
+import com.lxp.aplus.payment.application.result.PayableOrder;
 import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
@@ -29,22 +30,20 @@ public class PaymentService implements PaymentUseCase {
 
     private final PaymentRepository paymentRepository;
     private final OrderCommandPort orderCommandPort;
+    private final OrderQueryPort orderQueryPort;
     private final EnrollmentCommandPort enrollmentCommandPort;
 
     @Override
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
 
-        // 1. Order 생성 (From Order BC)
-        OrderCreateResult orderResult = orderCommandPort.createOrderFromCourseIds(
-                command.userId(),
-                command.courseIds()
-        );
+        // 1. 결제 대상 주문 조회
+        PayableOrder order = orderQueryPort.getPayableOrder(command.orderId(), command.userId());
 
         // 2. Payment 생성
         Payment payment = Payment.create(
-                orderResult.orderId(),
-                command.userId(),
-                orderResult.amount()
+                order.orderId(),
+                order.userId(),
+                order.amount()
         );
         paymentRepository.save(payment);
 
