@@ -15,6 +15,7 @@ public class PaymentCompletedEventListener {
 
     private final OrderUseCase orderUseCase;
 
+    // Payment 저장 트랜잭션이 커밋된 이후 주문 완료를 반영합니다.
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         log.info("PaymentCompletedEvent 수신: {}", event);

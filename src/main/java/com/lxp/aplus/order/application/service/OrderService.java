@@ -52,6 +52,7 @@ public class OrderService implements OrderUseCase {
 
         order.completeWithApprovedPayment(approvedPaymentId, approvedAmount);
 
+        // Enrollment가 Order를 조회하지 않도록 수강권 생성에 필요한 항목만 이벤트로 전달합니다.
         List<OrderCompletedEvent.Item> items = order.getOrderItems().stream()
                 .map(orderItem -> new OrderCompletedEvent.Item(
                         orderItem.getItemId(),
