@@ -2,25 +2,20 @@ package com.lxp.aplus.payment.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
+import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
-import com.lxp.aplus.payment.application.port.out.EnrollmentCommandPort;
 import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
-import com.lxp.aplus.payment.application.result.OrderItemSnapshot;
 import com.lxp.aplus.payment.application.result.PayableOrder;
 import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
 import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
-import com.lxp.aplus.payment.application.port.out.OrderCommandPort;
 import com.lxp.aplus.payment.domain.Payment;
 import com.lxp.aplus.payment.domain.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,9 +24,8 @@ import java.util.stream.Collectors;
 public class PaymentService implements PaymentUseCase {
 
     private final PaymentRepository paymentRepository;
-    private final OrderCommandPort orderCommandPort;
     private final OrderQueryPort orderQueryPort;
-    private final EnrollmentCommandPort enrollmentCommandPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
@@ -63,24 +57,15 @@ public class PaymentService implements PaymentUseCase {
         // 3. 도메인 불변성 검증 -> 상태 변경
         payment.approve(command.paymentKey(), command.amount());
 
-        // 4. Order BC에 완료 통보 (결제 성공 후 Order 상태를 COMPLETED로 변경 요청)
-        orderCommandPort.completeOrder(command.orderId(), payment.getPaymentId(), command.amount());
-
-        // 5. Payment 저장
+        // 4. Payment 저장
         paymentRepository.save(payment);
 
-        // 6. 수강 권한 부여
-        // TODO: 향후 이벤트로 처리
-        List<OrderItemSnapshot> orderItems = orderCommandPort.getOrderItemsOfOrder(command.orderId());
-
-        Map<Long, Long> courseToOrderItemMap = orderItems.stream()
-                        .collect(Collectors.toMap(
-                                OrderItemSnapshot::courseId,
-                                OrderItemSnapshot::orderItemId  // 실제 PK
-                        ));
-
-        log.debug("수강 신청 매핑 정보: {}", courseToOrderItemMap);
-
-        enrollmentCommandPort.enrollUserInCourses(command.userId(), courseToOrderItemMap);
+        // 5. 결제 완료 이벤트 발행
+        eventPublisher.publishEvent(new PaymentCompletedEvent(
+                payment.getPaymentId(),
+                payment.getOrderId(),
+                payment.getUserId(),
+                payment.getAmount()
+        ));
     }
 }
