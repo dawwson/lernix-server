@@ -60,7 +60,7 @@ public class PaymentService implements PaymentUseCase {
         // 4. Payment 저장
         paymentRepository.save(payment);
 
-        // 5. 결제 완료 이벤트 발행
+        // 후속 처리는 Order/Enrollment BC의 listener가 담당합니다.
         eventPublisher.publishEvent(new PaymentCompletedEvent(
                 payment.getPaymentId(),
                 payment.getOrderId(),

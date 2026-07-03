@@ -2,11 +2,8 @@ package com.lxp.aplus.common.event;
 
 import java.math.BigDecimal;
 
-/*
- * @param paymentId      결제 ID
- * @param orderId        주문 ID
- * @param userId         결제를 완료한 사용자 ID
- * @param approvedAmount 승인된 결제 금액
+/**
+ * Payment BC가 발행하는 결제 승인 완료 이벤트입니다.
  */
 public record PaymentCompletedEvent(
         String paymentId,
