@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.presentation.response;
+package com.lxp.aplus.cart.adapter.in.web.response;
 
 import com.lxp.aplus.cart.application.result.CartAddItemResult;
 import lombok.Builder;
@@ -10,10 +10,10 @@ public record CartAddItemResponse(
         int amount
 ) {
     public static CartAddItemResponse from(CartAddItemResult result) {
-        return CartAddItemResponse.builder()
-                .cartId(result.cartId())
-                .cartItemId(result.cartItemId())
-                .amount(result.amount())
-                .build();
+        return new CartAddItemResponse(
+                result.cartId(),
+                result.cartItemId(),
+                result.amount()
+        );
     }
 }

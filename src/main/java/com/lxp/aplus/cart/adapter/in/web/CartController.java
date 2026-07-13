@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.presentation.controller;
+package com.lxp.aplus.cart.adapter.in.web;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
@@ -7,10 +7,10 @@ import com.lxp.aplus.cart.application.port.in.CartUseCase;
 import com.lxp.aplus.cart.application.result.CartAddItemResult;
 import com.lxp.aplus.cart.application.result.CartGetItemsResult;
 import com.lxp.aplus.cart.application.result.CartRemoveItemResult;
-import com.lxp.aplus.cart.presentation.request.CartAddItemRequest;
-import com.lxp.aplus.cart.presentation.response.CartAddItemResponse;
-import com.lxp.aplus.cart.presentation.response.CartGetItemsResponse;
-import com.lxp.aplus.cart.presentation.response.CartRemoveItemResponse;
+import com.lxp.aplus.cart.adapter.in.web.request.CartAddItemRequest;
+import com.lxp.aplus.cart.adapter.in.web.response.CartAddItemResponse;
+import com.lxp.aplus.cart.adapter.in.web.response.CartGetItemsResponse;
+import com.lxp.aplus.cart.adapter.in.web.response.CartRemoveItemResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import static com.lxp.aplus.common.result.code.CartResultCode.*;
 
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping("/api/carts")
 @RequiredArgsConstructor
 public class CartController {
 

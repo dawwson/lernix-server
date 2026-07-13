@@ -1,7 +1,7 @@
-package com.lxp.aplus.cart.infrastructure.persistence;
+package com.lxp.aplus.cart.adapter.out.persistence;
 
+import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
 import com.lxp.aplus.cart.domain.Cart;
-import com.lxp.aplus.cart.domain.CartRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class CartRepositoryImpl implements CartRepository {
+public class CartPersistenceAdapter implements CartRepositoryPort {
 
     private final CartJpaRepository jpaRepository;
 

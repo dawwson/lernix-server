@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.application.port.out;
+package com.lxp.aplus.cart.application.port.out.course.dto;
 
 import lombok.Builder;
 

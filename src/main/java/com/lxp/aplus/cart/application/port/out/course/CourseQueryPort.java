@@ -1,4 +1,7 @@
-package com.lxp.aplus.cart.application.port.out;
+package com.lxp.aplus.cart.application.port.out.course;
+
+import com.lxp.aplus.cart.application.port.out.course.dto.CourseSalesStatus;
+import com.lxp.aplus.cart.application.port.out.course.dto.CourseSnapshot;
 
 import java.util.List;
 import java.util.Map;

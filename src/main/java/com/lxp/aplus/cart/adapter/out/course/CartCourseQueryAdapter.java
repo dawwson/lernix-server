@@ -1,13 +1,13 @@
-package com.lxp.aplus.cart.infrastructure.adapter;
+package com.lxp.aplus.cart.adapter.out.course;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
 import com.lxp.aplus.course.domain.CourseStatus;
-import com.lxp.aplus.cart.application.port.out.CourseQueryPort;
-import com.lxp.aplus.cart.application.port.out.CourseSalesStatus;
-import com.lxp.aplus.cart.application.port.out.CourseSnapshot;
+import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.cart.application.port.out.course.dto.CourseSalesStatus;
+import com.lxp.aplus.cart.application.port.out.course.dto.CourseSnapshot;
 import com.lxp.aplus.user.domain.User;
 import com.lxp.aplus.user.application.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,18 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
- * [주문 도메인 연동 어댑터 - MSA 분리 가이드]
- * - 현재: 동일 프로세스 내 CourseRepository 직접 호출 (In-process)
- * - 전환 시:
- * 1) 동기식 REST 통신 필요 시: OpenFeign 또는 RestClient 적용
- * 2) 고성능/타입 안정성 필요 시: gRPC Stub 적용
- * 3) 어느 방식을 선택하든 CourseQueryPort의 인터페이스 정의는 유지함
- */
+
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CourseQueryAdapter implements CourseQueryPort {
+public class CartCourseQueryAdapter implements CourseQueryPort {
 
     // FIXME: Course BC, User BC 침범 (의도됨) ⚠️
     // TODO: Repository 대신 HTTP/gRPC를 호출하는 외부 모듈 주입

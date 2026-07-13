@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.presentation.response;
+package com.lxp.aplus.cart.adapter.in.web.response;
 
 import com.lxp.aplus.cart.application.result.CartRemoveItemResult;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.infrastructure.persistence;
+package com.lxp.aplus.cart.adapter.out.persistence;
 
 import com.lxp.aplus.cart.domain.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;

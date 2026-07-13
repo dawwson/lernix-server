@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.presentation.request;
+package com.lxp.aplus.cart.adapter.in.web.request;
 
 import com.lxp.aplus.cart.application.command.CartAddItemCommand;
 import jakarta.validation.constraints.NotNull;
