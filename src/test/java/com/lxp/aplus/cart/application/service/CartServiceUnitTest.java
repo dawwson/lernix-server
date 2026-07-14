@@ -1,15 +1,15 @@
 package com.lxp.aplus.cart.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
-import com.lxp.aplus.cart.application.command.CartAddItemCommand;
-import com.lxp.aplus.cart.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
 import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
-import com.lxp.aplus.cart.application.port.out.course.dto.CourseSalesStatus;
-import com.lxp.aplus.cart.application.port.out.course.dto.CourseSnapshot;
+import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
+import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
-import com.lxp.aplus.cart.application.result.CartAddItemResult;
-import com.lxp.aplus.cart.application.result.CartGetItemsResult;
-import com.lxp.aplus.cart.application.result.CartRemoveItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartAddItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartGetItemsResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartRemoveItemResult;
 import com.lxp.aplus.cart.domain.Cart;
 import com.lxp.aplus.cart.domain.CartItem;
 import org.junit.jupiter.api.DisplayName;
