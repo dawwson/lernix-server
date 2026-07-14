@@ -1,6 +1,6 @@
-package com.lxp.aplus.cart.application.result;
+package com.lxp.aplus.cart.application.port.in.model.result;
 
-import com.lxp.aplus.cart.application.port.out.course.dto.CourseSnapshot;
+import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import com.lxp.aplus.cart.domain.Cart;
 import lombok.Builder;
 

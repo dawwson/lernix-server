@@ -2,11 +2,11 @@ package com.lxp.aplus.cart.adapter.in.web;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
-import com.lxp.aplus.cart.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
 import com.lxp.aplus.cart.application.port.in.CartUseCase;
-import com.lxp.aplus.cart.application.result.CartAddItemResult;
-import com.lxp.aplus.cart.application.result.CartGetItemsResult;
-import com.lxp.aplus.cart.application.result.CartRemoveItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartAddItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartGetItemsResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartRemoveItemResult;
 import com.lxp.aplus.cart.adapter.in.web.request.CartAddItemRequest;
 import com.lxp.aplus.cart.adapter.in.web.response.CartAddItemResponse;
 import com.lxp.aplus.cart.adapter.in.web.response.CartGetItemsResponse;

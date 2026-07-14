@@ -1,6 +1,6 @@
 package com.lxp.aplus.cart.adapter.in.web.response;
 
-import com.lxp.aplus.cart.application.result.CartAddItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartAddItemResult;
 import lombok.Builder;
 
 @Builder

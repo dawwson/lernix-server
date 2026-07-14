@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.application.command;
+package com.lxp.aplus.cart.application.port.in.model.command;
 
 import lombok.Builder;
 

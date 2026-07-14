@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.application.result;
+package com.lxp.aplus.cart.application.port.in.model.result;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CartErrorCode;

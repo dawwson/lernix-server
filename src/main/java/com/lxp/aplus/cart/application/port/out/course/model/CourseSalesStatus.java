@@ -1,4 +1,4 @@
-package com.lxp.aplus.cart.application.port.out.course.dto;
+package com.lxp.aplus.cart.application.port.out.course.model;
 
 public record CourseSalesStatus(
         Integer price,

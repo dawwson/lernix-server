@@ -1,6 +1,6 @@
 package com.lxp.aplus.cart.adapter.in.web.request;
 
-import com.lxp.aplus.cart.application.command.CartAddItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
 import jakarta.validation.constraints.NotNull;
 
 public record CartAddItemRequest(
