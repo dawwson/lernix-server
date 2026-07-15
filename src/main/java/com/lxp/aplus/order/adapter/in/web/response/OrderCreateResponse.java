@@ -1,6 +1,6 @@
-package com.lxp.aplus.order.presentation.response;
+package com.lxp.aplus.order.adapter.in.web.response;
 
-import com.lxp.aplus.order.application.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 import lombok.Builder;
 
 import java.math.BigDecimal;

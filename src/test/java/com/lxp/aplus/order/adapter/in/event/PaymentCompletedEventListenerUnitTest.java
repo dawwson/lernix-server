@@ -1,4 +1,4 @@
-package com.lxp.aplus.order.application.listener;
+package com.lxp.aplus.order.adapter.in.event;
 
 import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;

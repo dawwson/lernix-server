@@ -1,7 +1,7 @@
 package com.lxp.aplus.order.application.port.in;
 
-import com.lxp.aplus.order.application.command.OrderCreateCommand;
-import com.lxp.aplus.order.application.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
+import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 
 import java.math.BigDecimal;
 

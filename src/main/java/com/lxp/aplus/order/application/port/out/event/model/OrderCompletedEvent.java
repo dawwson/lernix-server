@@ -1,4 +1,4 @@
-package com.lxp.aplus.common.event;
+package com.lxp.aplus.order.application.port.out.event.model;
 
 import java.util.List;
 

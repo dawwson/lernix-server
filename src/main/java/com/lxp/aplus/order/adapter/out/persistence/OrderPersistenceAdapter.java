@@ -1,7 +1,7 @@
-package com.lxp.aplus.order.infrastructure.persistence;
+package com.lxp.aplus.order.adapter.out.persistence;
 
+import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
-import com.lxp.aplus.order.domain.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class OrderRepositoryImpl implements OrderRepository {
+public class OrderPersistenceAdapter implements OrderRepositoryPort {
 
     private final OrderJpaRepository jpaRepository;
 

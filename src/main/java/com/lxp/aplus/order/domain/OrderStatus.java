@@ -3,6 +3,7 @@ package com.lxp.aplus.order.domain;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+// TODO: Order 내부로 이동
 @Getter
 @RequiredArgsConstructor
 public enum OrderStatus {

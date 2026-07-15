@@ -1,4 +1,4 @@
-package com.lxp.aplus.order.application.listener;
+package com.lxp.aplus.order.adapter.in.event;
 
 import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/**
+ * PaymentCompletedEvent를 수신하여 Order UseCase를 호출하는 Inbound Event Adapter.
+ * - 이벤트별 책임을 분리하여 단일 책임 원칙(SRP)을 유지한다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor

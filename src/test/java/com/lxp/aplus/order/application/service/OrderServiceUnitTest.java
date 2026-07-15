@@ -1,13 +1,13 @@
 package com.lxp.aplus.order.application.service;
 
-import com.lxp.aplus.common.event.OrderCompletedEvent;
-import com.lxp.aplus.order.application.command.OrderCreateCommand;
-import com.lxp.aplus.order.application.port.out.CoursePrice;
-import com.lxp.aplus.order.application.port.out.CourseQueryPort;
-import com.lxp.aplus.order.application.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
+import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
+import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderRepository;
 import com.lxp.aplus.order.domain.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 class OrderServiceUnitTest {
 
     @Mock
-    private OrderRepository orderRepository;
+    private OrderRepositoryPort orderRepository;
 
     @Mock
     private CourseQueryPort courseQueryPort;

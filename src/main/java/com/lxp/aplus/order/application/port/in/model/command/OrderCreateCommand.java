@@ -1,4 +1,4 @@
-package com.lxp.aplus.order.application.command;
+package com.lxp.aplus.order.application.port.in.model.command;
 
 import lombok.Builder;
 

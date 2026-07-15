@@ -1,6 +1,6 @@
-package com.lxp.aplus.order.presentation.request;
+package com.lxp.aplus.order.adapter.in.web.request;
 
-import com.lxp.aplus.order.application.command.OrderCreateCommand;
+import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 

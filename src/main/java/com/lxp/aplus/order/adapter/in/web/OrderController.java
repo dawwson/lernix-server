@@ -1,11 +1,11 @@
-package com.lxp.aplus.order.presentation.controller;
+package com.lxp.aplus.order.adapter.in.web;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
+import com.lxp.aplus.order.adapter.in.web.request.OrderCreateRequest;
+import com.lxp.aplus.order.adapter.in.web.response.OrderCreateResponse;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
-import com.lxp.aplus.order.application.result.OrderCreateResult;
-import com.lxp.aplus.order.presentation.request.OrderCreateRequest;
-import com.lxp.aplus.order.presentation.response.OrderCreateResponse;
+import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

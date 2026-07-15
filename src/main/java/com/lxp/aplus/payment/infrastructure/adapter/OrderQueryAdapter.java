@@ -2,8 +2,8 @@ package com.lxp.aplus.payment.infrastructure.adapter;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
+import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
-import com.lxp.aplus.order.domain.OrderRepository;
 import com.lxp.aplus.order.domain.OrderStatus;
 import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
 import com.lxp.aplus.payment.application.result.PayableOrder;
@@ -18,7 +18,7 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class OrderQueryAdapter implements OrderQueryPort {
 
-    private final OrderRepository orderRepository;
+    private final OrderRepositoryPort orderRepository;
 
     @Override
     public PayableOrder getPayableOrder(String orderId, Long userId) {
