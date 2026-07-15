@@ -1,6 +1,6 @@
-package com.lxp.aplus.payment.presentation.request;
+package com.lxp.aplus.payment.adapter.in.web.request;
 
-import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
+import com.lxp.aplus.payment.application.port.in.model.command.PaymentPrepareCommand;
 import jakarta.validation.constraints.NotBlank;
 
 public record PaymentPrepareRequest(

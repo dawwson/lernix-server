@@ -1,7 +1,7 @@
 package com.lxp.aplus.order.adapter.in.event;
 
-import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
+import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

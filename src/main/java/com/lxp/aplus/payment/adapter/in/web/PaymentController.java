@@ -1,12 +1,12 @@
-package com.lxp.aplus.payment.presentation.controller;
+package com.lxp.aplus.payment.adapter.in.web;
 
 import com.lxp.aplus.common.result.ResultResponse;
 import com.lxp.aplus.common.security.Authenticated;
+import com.lxp.aplus.payment.adapter.in.web.request.PaymentConfirmRequest;
+import com.lxp.aplus.payment.adapter.in.web.request.PaymentPrepareRequest;
+import com.lxp.aplus.payment.adapter.in.web.response.PaymentPrepareResponse;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
-import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
-import com.lxp.aplus.payment.presentation.request.PaymentConfirmRequest;
-import com.lxp.aplus.payment.presentation.request.PaymentPrepareRequest;
-import com.lxp.aplus.payment.presentation.response.PaymentPrepareResponse;
+import com.lxp.aplus.payment.application.port.in.model.result.PaymentPrepareResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.lxp.aplus.order.adapter.in.event;
 
-import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
+import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,4 +1,4 @@
-package com.lxp.aplus.payment.application.result;
+package com.lxp.aplus.payment.application.port.out.order.model;
 
 import java.math.BigDecimal;
 

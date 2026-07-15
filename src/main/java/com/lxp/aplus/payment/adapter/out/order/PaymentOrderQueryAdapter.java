@@ -1,12 +1,12 @@
-package com.lxp.aplus.payment.infrastructure.adapter;
+package com.lxp.aplus.payment.adapter.out.order;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderStatus;
-import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
-import com.lxp.aplus.payment.application.result.PayableOrder;
+import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
+import com.lxp.aplus.payment.application.port.out.order.model.PayableOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +16,7 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class OrderQueryAdapter implements OrderQueryPort {
+public class PaymentOrderQueryAdapter implements PaymentOrderQueryPort {
 
     private final OrderRepositoryPort orderRepository;
 

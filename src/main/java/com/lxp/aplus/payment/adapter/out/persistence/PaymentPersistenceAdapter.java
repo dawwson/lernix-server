@@ -1,7 +1,7 @@
-package com.lxp.aplus.payment.infrastructure.persistence;
+package com.lxp.aplus.payment.adapter.out.persistence;
 
+import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class PaymentRepositoryImpl implements PaymentRepository {
+public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
 
     private final PaymentJpaRepository jpaRepository;
 

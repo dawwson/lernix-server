@@ -1,7 +1,7 @@
-package com.lxp.aplus.payment.presentation.request;
+package com.lxp.aplus.payment.adapter.in.web.request;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
+import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

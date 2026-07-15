@@ -1,6 +1,6 @@
-package com.lxp.aplus.payment.presentation.response;
+package com.lxp.aplus.payment.adapter.in.web.response;
 
-import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
+import com.lxp.aplus.payment.application.port.in.model.result.PaymentPrepareResult;
 import lombok.Builder;
 
 import java.math.BigDecimal;

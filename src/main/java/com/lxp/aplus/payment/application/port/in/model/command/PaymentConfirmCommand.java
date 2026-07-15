@@ -1,4 +1,4 @@
-package com.lxp.aplus.payment.application.command;
+package com.lxp.aplus.payment.application.port.in.model.command;
 
 import lombok.Builder;
 

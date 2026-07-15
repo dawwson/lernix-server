@@ -1,4 +1,4 @@
-package com.lxp.aplus.payment.application.result;
+package com.lxp.aplus.payment.application.port.in.model.result;
 
 import com.lxp.aplus.payment.domain.Payment;
 import lombok.Builder;
