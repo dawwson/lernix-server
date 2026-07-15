@@ -1,6 +1,7 @@
 package com.lxp.aplus.payment.application.service;
 
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
+import com.lxp.aplus.payment.application.port.out.event.PaymentEventPublisherPort;
 import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
 import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
 import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
@@ -12,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -32,7 +32,7 @@ class PaymentServiceUnitTest {
     private PaymentOrderQueryPort orderQueryPort;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private PaymentEventPublisherPort eventPublisher;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -55,7 +55,7 @@ class PaymentServiceUnitTest {
         // then
         ArgumentCaptor<PaymentCompletedEvent> eventCaptor = ArgumentCaptor.forClass(PaymentCompletedEvent.class);
         verify(paymentRepository).save(payment);
-        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        verify(eventPublisher).publish(eventCaptor.capture());
 
         PaymentCompletedEvent event = eventCaptor.getValue();
         assertThat(event.paymentId()).isEqualTo(payment.getPaymentId());
