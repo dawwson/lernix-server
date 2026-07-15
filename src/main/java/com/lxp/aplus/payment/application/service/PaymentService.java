@@ -2,15 +2,15 @@ package com.lxp.aplus.payment.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
-import com.lxp.aplus.common.event.PaymentCompletedEvent;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
-import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
-import com.lxp.aplus.payment.application.result.PayableOrder;
-import com.lxp.aplus.payment.application.result.PaymentPrepareResult;
-import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
-import com.lxp.aplus.payment.application.command.PaymentPrepareCommand;
+import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
+import com.lxp.aplus.payment.application.port.in.model.command.PaymentPrepareCommand;
+import com.lxp.aplus.payment.application.port.in.model.result.PaymentPrepareResult;
+import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
+import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
+import com.lxp.aplus.payment.application.port.out.order.model.PayableOrder;
+import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class PaymentService implements PaymentUseCase {
 
-    private final PaymentRepository paymentRepository;
-    private final OrderQueryPort orderQueryPort;
+    private final PaymentRepositoryPort paymentRepository;
+    private final PaymentOrderQueryPort orderQueryPort;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -60,6 +60,7 @@ public class PaymentService implements PaymentUseCase {
         // 4. Payment 저장
         paymentRepository.save(payment);
 
+        // TODO: EventPublisher Port 분리 필요. 현재는 Spring Event를 직접 사용하고 있음.
         // 후속 처리는 Order/Enrollment BC의 listener가 담당합니다.
         eventPublisher.publishEvent(new PaymentCompletedEvent(
                 payment.getPaymentId(),

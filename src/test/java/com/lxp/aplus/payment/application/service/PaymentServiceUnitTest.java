@@ -1,10 +1,10 @@
 package com.lxp.aplus.payment.application.service;
 
-import com.lxp.aplus.common.event.PaymentCompletedEvent;
-import com.lxp.aplus.payment.application.command.PaymentConfirmCommand;
-import com.lxp.aplus.payment.application.port.out.OrderQueryPort;
+import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
+import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
+import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
+import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,10 +26,10 @@ import static org.mockito.Mockito.verify;
 class PaymentServiceUnitTest {
 
     @Mock
-    private PaymentRepository paymentRepository;
+    private PaymentRepositoryPort paymentRepository;
 
     @Mock
-    private OrderQueryPort orderQueryPort;
+    private PaymentOrderQueryPort orderQueryPort;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;

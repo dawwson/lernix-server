@@ -1,8 +1,8 @@
 package com.lxp.aplus.enrollment.application.listener;
 
-import com.lxp.aplus.common.event.OrderCompletedEvent;
 import com.lxp.aplus.enrollment.application.command.EnrollmentCommand;
 import com.lxp.aplus.enrollment.application.port.in.EnrollmentCommandUseCase;
+import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -11,7 +11,6 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -27,7 +26,6 @@ public class OrderCompletedEventListener {
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
     @Retryable(
             retryFor = DataAccessException.class,
             maxAttempts = 3,
@@ -35,6 +33,7 @@ public class OrderCompletedEventListener {
     )
     public void handleOrderCompletedEvent(OrderCompletedEvent event) {
         log.info("OrderCompletedEvent 수신 (시도): {}", event);
+
         for (OrderCompletedEvent.Item item : event.items()) {
             EnrollmentCommand command = new EnrollmentCommand(
                     event.userId(),

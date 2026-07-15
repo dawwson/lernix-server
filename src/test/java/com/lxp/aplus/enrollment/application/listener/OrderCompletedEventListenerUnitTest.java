@@ -1,8 +1,8 @@
 package com.lxp.aplus.enrollment.application.listener;
 
-import com.lxp.aplus.common.event.OrderCompletedEvent;
 import com.lxp.aplus.enrollment.application.command.EnrollmentCommand;
 import com.lxp.aplus.enrollment.application.port.in.EnrollmentCommandUseCase;
+import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

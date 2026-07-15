@@ -2,15 +2,15 @@ package com.lxp.aplus.order.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
-import com.lxp.aplus.common.event.OrderCompletedEvent;
-import com.lxp.aplus.order.application.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
-import com.lxp.aplus.order.application.port.out.CoursePrice;
-import com.lxp.aplus.order.application.port.out.CourseQueryPort;
-import com.lxp.aplus.order.application.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
+import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
+import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
+import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import java.util.List;
 @Transactional
 public class OrderService implements OrderUseCase {
 
-    private final OrderRepository orderRepository;
+    private final OrderRepositoryPort orderRepository;
     private final CourseQueryPort courseQueryPort;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -60,6 +60,7 @@ public class OrderService implements OrderUseCase {
                 ))
                 .toList();
 
+        // TODO: EventPublisher -> 이벤트 발행 포트로 분리
         eventPublisher.publishEvent(new OrderCompletedEvent(order.getOrderId(), order.getUserId(), items));
     }
 }

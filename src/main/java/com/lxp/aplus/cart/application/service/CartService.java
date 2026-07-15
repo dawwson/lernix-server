@@ -2,18 +2,18 @@ package com.lxp.aplus.cart.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CartErrorCode;
-import com.lxp.aplus.cart.application.command.CartAddItemCommand;
-import com.lxp.aplus.cart.application.command.CartRemoveItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
+import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
 import com.lxp.aplus.cart.application.port.in.CartUseCase;
-import com.lxp.aplus.cart.application.port.out.CourseQueryPort;
-import com.lxp.aplus.cart.application.port.out.CourseSalesStatus;
-import com.lxp.aplus.cart.application.port.out.CourseSnapshot;
-import com.lxp.aplus.cart.application.result.CartAddItemResult;
-import com.lxp.aplus.cart.application.result.CartGetItemsResult;
-import com.lxp.aplus.cart.application.result.CartRemoveItemResult;
+import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
+import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
+import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
+import com.lxp.aplus.cart.application.port.in.model.result.CartAddItemResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartGetItemsResult;
+import com.lxp.aplus.cart.application.port.in.model.result.CartRemoveItemResult;
 import com.lxp.aplus.cart.domain.Cart;
 import com.lxp.aplus.cart.domain.CartItem;
-import com.lxp.aplus.cart.domain.CartRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +26,7 @@ import java.util.Map;
 @Transactional
 public class CartService implements CartUseCase {
 
-    private final CartRepository cartRepository;
+    private final CartRepositoryPort cartRepository;
     private final CourseQueryPort courseQueryPort;
 
     /*
