@@ -6,6 +6,7 @@ import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentPrepareCommand;
 import com.lxp.aplus.payment.application.port.in.model.result.PaymentPrepareResult;
+import com.lxp.aplus.payment.application.port.out.event.PaymentEventPublisherPort;
 import com.lxp.aplus.payment.application.port.out.event.model.PaymentCompletedEvent;
 import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
 import com.lxp.aplus.payment.application.port.out.order.model.PayableOrder;
@@ -13,7 +14,6 @@ import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPo
 import com.lxp.aplus.payment.domain.Payment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +25,7 @@ public class PaymentService implements PaymentUseCase {
 
     private final PaymentRepositoryPort paymentRepository;
     private final PaymentOrderQueryPort orderQueryPort;
-    private final ApplicationEventPublisher eventPublisher;
+    private final PaymentEventPublisherPort eventPublisher;
 
     @Override
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
@@ -60,13 +60,13 @@ public class PaymentService implements PaymentUseCase {
         // 4. Payment 저장
         paymentRepository.save(payment);
 
-        // TODO: EventPublisher Port 분리 필요. 현재는 Spring Event를 직접 사용하고 있음.
-        // 후속 처리는 Order/Enrollment BC의 listener가 담당합니다.
-        eventPublisher.publishEvent(new PaymentCompletedEvent(
-                payment.getPaymentId(),
-                payment.getOrderId(),
-                payment.getUserId(),
-                payment.getAmount()
-        ));
+        eventPublisher.publish(
+                new PaymentCompletedEvent(
+                    payment.getPaymentId(),
+                    payment.getOrderId(),
+                    payment.getUserId(),
+                    payment.getAmount()
+                )
+        );
     }
 }
