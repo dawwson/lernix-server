@@ -7,12 +7,12 @@ import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.event.OrderEventPublisherPort;
 import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +26,7 @@ public class OrderService implements OrderUseCase {
 
     private final OrderRepositoryPort orderRepository;
     private final CourseQueryPort courseQueryPort;
-    private final ApplicationEventPublisher eventPublisher;
+    private final OrderEventPublisherPort eventPublisher;
 
     @Override
     public OrderCreateResult createOrder(OrderCreateCommand command) {
@@ -60,7 +60,12 @@ public class OrderService implements OrderUseCase {
                 ))
                 .toList();
 
-        // TODO: EventPublisher -> 이벤트 발행 포트로 분리
-        eventPublisher.publishEvent(new OrderCompletedEvent(order.getOrderId(), order.getUserId(), items));
+        eventPublisher.publish(
+                new OrderCompletedEvent(
+                        order.getOrderId(),
+                        order.getUserId(),
+                        items
+                )
+        );
     }
 }
