@@ -4,6 +4,7 @@ import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
 import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.event.OrderEventPublisherPort;
 import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
@@ -16,7 +17,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -39,7 +39,7 @@ class OrderServiceUnitTest {
     private CourseQueryPort courseQueryPort;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private OrderEventPublisherPort eventPublisher;
 
     @InjectMocks
     private OrderService orderService;
@@ -98,7 +98,7 @@ class OrderServiceUnitTest {
 
         // then
         ArgumentCaptor<OrderCompletedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCompletedEvent.class);
-        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        verify(eventPublisher).publish(eventCaptor.capture());
 
         OrderCompletedEvent event = eventCaptor.getValue();
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
