@@ -6,7 +6,10 @@ import com.lxp.aplus.user.application.internal.usecase.UserInternalUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -20,5 +23,18 @@ public class CourseUserModuleAdapter implements UserQueryPort {
                         .id(dto.id())
                         .nickName(dto.nickName())
                         .build());
+    }
+
+    @Override
+    public Map<Long, InstructorResult> findInstructorsByIds(List<Long> userIds) {
+        return userInternalUseCase.findByIds(userIds).values().stream()
+                .map(dto -> InstructorResult.builder()
+                        .id(dto.id())
+                        .nickName(dto.nickName())
+                        .build())
+                .collect(Collectors.toMap(
+                        InstructorResult::id,
+                        instructor -> instructor
+                ));
     }
 }
