@@ -6,7 +6,7 @@ import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import java.util.List;
 import java.util.Map;
 
-public interface CourseQueryPort {
+public interface CartCourseQueryPort {
 
     // TODO: model 네이밍 구체적으로 바꿀 필요성
     /*

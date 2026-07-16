@@ -5,7 +5,7 @@ import com.lxp.aplus.common.error.code.CartErrorCode;
 import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
 import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
 import com.lxp.aplus.cart.application.port.in.CartUseCase;
-import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.cart.application.port.out.course.CartCourseQueryPort;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class CartService implements CartUseCase {
 
     private final CartRepositoryPort cartRepository;
-    private final CourseQueryPort courseQueryPort;
+    private final CartCourseQueryPort courseQueryPort;
 
     /*
      * 장바구니에 강좌 항목을 추가한다.
