@@ -55,12 +55,14 @@ public class Cart extends BaseAggregateRoot {
         return Collections.unmodifiableList(cartItems);
     }
 
-    public void addCartItem(Long courseId) {
+    public CartItem addCartItem(Long courseId) {
         if (contains(courseId)) {
             throw new BusinessException(CartErrorCode.CART_DUPLICATED_CART_ITEM);
         }
 
-        cartItems.add(CartItem.create(this, courseId));
+        CartItem cartItem = CartItem.create(this, courseId);
+        cartItems.add(cartItem);
+        return cartItem;
     }
 
     public void removeCartItem(Long cartItemId) {

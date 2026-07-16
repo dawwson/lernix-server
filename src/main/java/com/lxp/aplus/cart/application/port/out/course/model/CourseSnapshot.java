@@ -9,6 +9,7 @@ public record CourseSnapshot(
         String courseStatus,
         String instructorName,
         String thumbnailUrl,
-        int price
+        int price,
+        boolean purchasable
 ) {
 }
