@@ -5,8 +5,8 @@ import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
 import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
-import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
-import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.course.OrderCourseQueryPort;
+import com.lxp.aplus.order.application.port.out.course.model.PurchasableCourse;
 import com.lxp.aplus.order.application.port.out.event.OrderEventPublisherPort;
 import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
@@ -25,12 +25,12 @@ import java.util.List;
 public class OrderService implements OrderUseCase {
 
     private final OrderRepositoryPort orderRepository;
-    private final CourseQueryPort courseQueryPort;
+    private final OrderCourseQueryPort courseQueryPort;
     private final OrderEventPublisherPort eventPublisher;
 
     @Override
     public OrderCreateResult createOrder(OrderCreateCommand command) {
-        List<CoursePrice> coursePrices = courseQueryPort.getCoursePriceByIds(command.courseIds());
+        List<PurchasableCourse> coursePrices = courseQueryPort.getPurchasableCourses(command.courseIds());
 
         List<OrderItem> orderItems = coursePrices.stream()
                 .map(coursePrice -> OrderItem.createCourseItem(
