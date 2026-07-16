@@ -1,9 +1,10 @@
 package com.lxp.aplus.cart.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
+import com.lxp.aplus.common.error.code.CartErrorCode;
 import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
 import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
-import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.cart.application.port.out.course.CartCourseQueryPort;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
@@ -20,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CartService 단위 테스트")
@@ -37,7 +41,7 @@ class CartServiceUnitTest {
     private CartRepositoryPort cartRepository;
 
     @Mock
-    private CourseQueryPort courseQueryPort;
+    private CartCourseQueryPort courseQueryPort;
 
     @InjectMocks
     private CartService cartService;
@@ -63,7 +67,6 @@ class CartServiceUnitTest {
             return savedCart;
         });
 
-        given(courseQueryPort.isCoursePublished(courseId)).willReturn(true);
         given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
                 .willReturn(Map.of(courseId, new CourseSalesStatus(price, true)));
 
@@ -74,6 +77,35 @@ class CartServiceUnitTest {
         assertThat(result.cartId()).isEqualTo(10L);
         assertThat(result.cartItemId()).isEqualTo(20L);
         assertThat(result.amount()).isEqualTo(price);
+        then(courseQueryPort).should().getCourseSalesStatusByIds(List.of(courseId));
+        then(cartRepository).should().save(cart);
+    }
+
+    @Test
+    @DisplayName("강좌 추가 시 기존 강좌와 신규 강좌를 한 번에 조회해 총액을 계산한다")
+    void addCartItem_LoadsExistingAndNewCoursesOnce() {
+        Cart cart = Cart.create(USER_ID);
+        CartItem existingItem = cart.addCartItem(1L);
+        ReflectionTestUtils.setField(cart, "id", 10L);
+        ReflectionTestUtils.setField(existingItem, "id", 100L);
+        given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
+        given(cartRepository.save(cart)).willAnswer(invocation -> {
+            Cart savedCart = invocation.getArgument(0);
+            ReflectionTestUtils.setField(savedCart.getCartItems().get(1), "id", 200L);
+            return savedCart;
+        });
+        given(courseQueryPort.getCourseSalesStatusByIds(List.of(1L, 2L)))
+                .willReturn(Map.of(
+                        1L, new CourseSalesStatus(10000, true),
+                        2L, new CourseSalesStatus(30000, true)
+                ));
+
+        CartAddItemResult result =
+                cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, 2L));
+
+        assertThat(result.cartItemId()).isEqualTo(200L);
+        assertThat(result.amount()).isEqualTo(40000);
+        then(courseQueryPort).should().getCourseSalesStatusByIds(List.of(1L, 2L));
     }
 
     @Test
@@ -98,11 +130,8 @@ class CartServiceUnitTest {
         given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
 
         // 가격표 셋업: 삭제 후 남은 2번 강의(2L)의 가격이 필요함
-        given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
-                .willReturn(Map.of(
-                        1L, new CourseSalesStatus(10000, true),
-                        2L, new CourseSalesStatus(30000, true)
-                ));
+        given(courseQueryPort.getCourseSalesStatusByIds(List.of(2L)))
+                .willReturn(Map.of(2L, new CourseSalesStatus(30000, true)));
 
         // 4. when: 삭제 실행
         CartRemoveItemResult result = cartService.removeCartItemFromCart(
@@ -113,6 +142,7 @@ class CartServiceUnitTest {
         assertThat(result.amount()).isEqualTo(30000);
         assertThat(cart.getCartItems()).hasSize(1);
         assertThat(cart.getCourseIds()).containsExactly(2L); // 실제로 2번 강의만 남았는지 확인
+        then(courseQueryPort).should().getCourseSalesStatusByIds(List.of(2L));
     }
 
     @Test
@@ -131,15 +161,10 @@ class CartServiceUnitTest {
         ReflectionTestUtils.setField(item2, "id", 200L);
 
         given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
-        given(courseQueryPort.getCourseSnapshot(anyList()))
+        given(courseQueryPort.getCourseSnapshotByIds(anyList()))
                 .willReturn(Map.of(
-                        1L, new CourseSnapshot(1L, "Java Basic", "PUBLISHED", "강사1", "thumb1", 10000),
-                        2L, new CourseSnapshot(2L, "Spring Basic", "PUBLISHED", "강사2", "thumb2", 30000)
-                ));
-        given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
-                .willReturn(Map.of(
-                        1L, new CourseSalesStatus(10000, true),
-                        2L, new CourseSalesStatus(30000, true)
+                        1L, new CourseSnapshot(1L, "Java Basic", "PUBLISHED", "강사1", "thumb1", 10000, true),
+                        2L, new CourseSnapshot(2L, "Spring Basic", "DRAFT", "강사2", "thumb2", 30000, false)
                 ));
 
         // when
@@ -148,7 +173,31 @@ class CartServiceUnitTest {
         // then
         assertThat(result.cartId()).isEqualTo(10L);
         assertThat(result.items()).hasSize(2);
-        assertThat(result.totalAmount()).isEqualTo(40000);
+        assertThat(result.totalAmount()).isEqualTo(10000);
+        assertThat(result.items().get(0).cartItemId()).isEqualTo(100L);
+        assertThat(result.items().get(0).courseTitle()).isEqualTo("Java Basic");
+        assertThat(result.items().get(0).instructorName()).isEqualTo("강사1");
+        assertThat(result.items().get(0).price()).isEqualTo(10000);
+        assertThat(result.items().get(1).courseStatus()).isEqualTo("DRAFT");
+        assertThat(result.items().get(1).price()).isEqualTo(30000);
+        then(courseQueryPort).should().getCourseSnapshotByIds(cart.getCourseIds());
+        then(courseQueryPort).should(never()).getCourseSalesStatusByIds(anyList());
+    }
+
+    @Test
+    @DisplayName("빈 장바구니를 조회하면 Course 조회 없이 빈 결과를 반환한다")
+    void getCartItems_EmptyCart() {
+        Cart cart = Cart.create(USER_ID);
+        ReflectionTestUtils.setField(cart, "id", 10L);
+        given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
+
+        CartGetItemsResult result = cartService.getCartItems(USER_ID);
+
+        assertThat(result.cartId()).isEqualTo(10L);
+        assertThat(result.items()).isEmpty();
+        assertThat(result.totalAmount()).isZero();
+        then(courseQueryPort).should(never()).getCourseSnapshotByIds(anyList());
+        then(courseQueryPort).should(never()).getCourseSalesStatusByIds(anyList());
     }
     // -------------------------------------------------------------------------
     // 2. 필수 예외 테스트 (Edge Case - 장애 방지용)
@@ -160,13 +209,52 @@ class CartServiceUnitTest {
         // given: 이미 100번 강좌가 담겨있음
         Cart cart = Cart.create(USER_ID);
         cart.addCartItem(100L);
-        given(courseQueryPort.isCoursePublished(100L)).willReturn(true);
+        given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
+                .willReturn(Map.of(100L, new CourseSalesStatus(50000, true)));
         given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
 
         // when & then: 중복 추가 시 도메인 규칙 위반으로 예외 발생 확인
-        assertThatThrownBy(() ->
-                cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, 100L))
-        ).isInstanceOf(BusinessException.class);
+        assertCartError(
+                () -> cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, 100L)),
+                CartErrorCode.CART_DUPLICATED_CART_ITEM
+        );
+        then(cartRepository).should(never()).save(cart);
+    }
+
+    @Test
+    @DisplayName("구매할 수 없는 강좌는 장바구니에 추가할 수 없다")
+    void addCartItem_UnpurchasableCourse_Fail() {
+        Cart cart = Cart.create(USER_ID);
+        Long courseId = 100L;
+        given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
+        given(courseQueryPort.getCourseSalesStatusByIds(anyList()))
+                .willReturn(Map.of(courseId, new CourseSalesStatus(50000, false)));
+
+        assertCartError(
+                () -> cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, courseId)),
+                CartErrorCode.CART_CANNOT_ADD_UNPUBLISHED_COURSE
+        );
+
+        assertThat(cart.getCartItems()).isEmpty();
+        then(cartRepository).should(never()).save(cart);
+    }
+
+    @Test
+    @DisplayName("Course 조회 결과에 추가할 강좌가 없으면 장바구니에 추가할 수 없다")
+    void addCartItem_MissingCourse_Fail() {
+        Cart cart = Cart.create(USER_ID);
+        Long courseId = 100L;
+        given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
+        given(courseQueryPort.getCourseSalesStatusByIds(List.of(courseId)))
+                .willReturn(Map.of());
+
+        assertCartError(
+                () -> cartService.addCartItemToCart(new CartAddItemCommand(USER_ID, courseId)),
+                CartErrorCode.CART_CANNOT_ADD_UNPUBLISHED_COURSE
+        );
+
+        assertThat(cart.getCartItems()).isEmpty();
+        then(cartRepository).should(never()).save(cart);
     }
 
     @Test
@@ -177,8 +265,35 @@ class CartServiceUnitTest {
         given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
 
         // when & then: 없는 ID(999L) 삭제 시도
-        assertThatThrownBy(() ->
-                cartService.removeCartItemFromCart(new CartRemoveItemCommand(USER_ID, 999L))
-        ).isInstanceOf(BusinessException.class);
+        assertCartError(
+                () -> cartService.removeCartItemFromCart(new CartRemoveItemCommand(USER_ID, 999L)),
+                CartErrorCode.CART_ITEM_NOT_FOUND
+        );
+        then(courseQueryPort).should(never()).getCourseSalesStatusByIds(anyList());
+    }
+
+    @Test
+    @DisplayName("마지막 아이템을 삭제하면 Course 조회 없이 합계 0을 반환한다")
+    void removeLastCartItem_ReturnsZeroWithoutCourseQuery() {
+        Cart cart = Cart.create(USER_ID);
+        CartItem cartItem = cart.addCartItem(1L);
+        ReflectionTestUtils.setField(cartItem, "id", 100L);
+        given(cartRepository.findByUserId(USER_ID)).willReturn(Optional.of(cart));
+
+        CartRemoveItemResult result = cartService.removeCartItemFromCart(
+                new CartRemoveItemCommand(USER_ID, 100L)
+        );
+
+        assertThat(result.amount()).isZero();
+        assertThat(result.removedCartItemId()).isEqualTo(100L);
+        assertThat(cart.getCartItems()).isEmpty();
+        then(courseQueryPort).should(never()).getCourseSalesStatusByIds(anyList());
+    }
+
+    private void assertCartError(Runnable action, CartErrorCode errorCode) {
+        assertThatThrownBy(action::run)
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(errorCode);
     }
 }
