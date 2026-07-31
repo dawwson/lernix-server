@@ -6,20 +6,16 @@ import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import java.util.List;
 import java.util.Map;
 
-public interface CourseQueryPort {
+public interface CartCourseQueryPort {
 
-    /**
-     * 특정 강좌가 PUBLISHED 상태인지 확인한다.
-     */
-    boolean isCoursePublished(Long courseId);
-
+    // TODO: model 네이밍 구체적으로 바꿀 필요성
     /*
-     * course별 판매 상태(가격, 상태) 조회
+     * 판매 정보 조회
      */
     Map<Long, CourseSalesStatus> getCourseSalesStatusByIds(List<Long> courseIds);
 
     /*
-     * course의 구매 시점의 상품 정보 조회
+     * 구매 상세 정보 조회
      */
-    Map<Long, CourseSnapshot> getCourseSnapshot(List<Long> courseIds);
+    Map<Long, CourseSnapshot> getCourseSnapshotByIds(List<Long> courseIds);
 }

@@ -5,7 +5,7 @@ import com.lxp.aplus.common.error.code.CartErrorCode;
 import com.lxp.aplus.cart.application.port.in.model.command.CartAddItemCommand;
 import com.lxp.aplus.cart.application.port.in.model.command.CartRemoveItemCommand;
 import com.lxp.aplus.cart.application.port.in.CartUseCase;
-import com.lxp.aplus.cart.application.port.out.course.CourseQueryPort;
+import com.lxp.aplus.cart.application.port.out.course.CartCourseQueryPort;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
 import com.lxp.aplus.cart.application.port.out.repository.CartRepositoryPort;
@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +28,7 @@ import java.util.Map;
 public class CartService implements CartUseCase {
 
     private final CartRepositoryPort cartRepository;
-    private final CourseQueryPort courseQueryPort;
+    private final CartCourseQueryPort courseQueryPort;
 
     /*
      * 장바구니에 강좌 항목을 추가한다.
@@ -36,25 +37,20 @@ public class CartService implements CartUseCase {
      */
     @Override
     public CartAddItemResult addCartItemToCart(CartAddItemCommand command) {
-
-        // 1. 요청된 강좌가 발행된 상태인지 검사
-        if (!courseQueryPort.isCoursePublished(command.courseId())) {
-            throw new BusinessException(CartErrorCode.CART_CANNOT_ADD_UNPUBLISHED_COURSE);
-        }
-
-        // 2. cart 조회 (없으면 생성)
         Cart cart = getOrCreateCart(command.userId());
 
-        // 3. cart에 새로운 cartItem 추가
-        cart.addCartItem(command.courseId());
+        Map<Long, CourseSalesStatus> courseSalesStatusMap =
+                getSalesStatusIncluding(cart, command.courseId());
 
-        // 4. PK 생성을 위해 명시적으로 저장
+        validatePurchasable(command.courseId(), courseSalesStatusMap);
+
+        CartItem addedCartItem = cart.addCartItem(command.courseId());
+
         cartRepository.save(cart);
 
-        // 5. 장바구니에 담긴 모든 강좌의 가격 조회
-        int amount = calculateCartAmount(cart);
+        int amount = calculateTotalFromSalesStatus(cart, courseSalesStatusMap);
 
-        return CartAddItemResult.of(cart, command.courseId(), amount);
+        return CartAddItemResult.of(cart, addedCartItem, amount);
     }
 
     /*
@@ -68,8 +64,12 @@ public class CartService implements CartUseCase {
         // 2. cart에서 항목 제거 (dirty checking)
         cart.removeCartItem(command.cartItemId());
 
-        // 3. 장바구니에 담긴 모든 강좌의 가격 조회
-        int amount = calculateCartAmount(cart);
+        int amount = 0;
+        if (!cart.getCartItems().isEmpty()) {
+            Map<Long, CourseSalesStatus> courseSalesStatusMap =
+                    courseQueryPort.getCourseSalesStatusByIds(cart.getCourseIds());
+            amount = calculateTotalFromSalesStatus(cart, courseSalesStatusMap);
+        }
 
         return CartRemoveItemResult.of(cart, command.cartItemId(), amount);
     }
@@ -77,7 +77,7 @@ public class CartService implements CartUseCase {
     /*
      * 사용자별 장바구니를 조회하거나, 없을 경우 새 장바구니를 생성하여 반환한다.
      *
-     * TODO: 회원가입 시 장바구니 미리 생성하도록 수정
+     * FIXME: 회원가입 시 장바구니 미리 생성하도록 수정
      * 1. GET 요청에서 자원 생성 책임을 분리하고, 조회 시점에 데이터 존재를 보장하기 위함
      * 2. CQRS 패턴을 지키기 위함
      */
@@ -86,25 +86,57 @@ public class CartService implements CartUseCase {
                 .orElseGet(() -> cartRepository.save(Cart.create(userId)));
     }
 
-    /*
-     * 장바구니에 담긴 강좌들의 가격 합계를 계산한다.
-     * - 장바구니에 삭제된 강좌들이 포함되어 있을 수 있으므로 PUBLISHED 강좌 가격만 계산한다.
-     */
-    private int calculateCartAmount(Cart cart) {
-        Map<Long, CourseSalesStatus> courseSalesStatusMap = courseQueryPort.getCourseSalesStatusByIds(cart.getCourseIds());
+    private Map<Long, CourseSalesStatus> getSalesStatusIncluding(
+            Cart cart,
+            Long courseId
+    ) {
+        List<Long> courseIds = Stream.concat(
+                        cart.getCourseIds().stream(),
+                        Stream.of(courseId)
+                )
+                .distinct()
+                .toList();
 
+        return courseQueryPort.getCourseSalesStatusByIds(courseIds);
+    }
+
+    private void validatePurchasable(
+            Long courseId,
+            Map<Long, CourseSalesStatus> courseSalesStatusMap
+    ) {
+        CourseSalesStatus courseSalesStatus = courseSalesStatusMap.get(courseId);
+
+        if (courseSalesStatus == null || !courseSalesStatus.purchasable()) {
+            throw new BusinessException(CartErrorCode.CART_CANNOT_ADD_UNPUBLISHED_COURSE);
+        }
+    }
+
+    private int calculateTotalFromSalesStatus(
+            Cart cart,
+            Map<Long, CourseSalesStatus> courseSalesStatusMap
+    ) {
         return cart.getCartItems().stream()
                 .mapToInt(cartItem -> {
                     CourseSalesStatus courseSalesStatus = courseSalesStatusMap.get(cartItem.getCourseId());
 
-                    // PUBLISHED 강좌만 가격 반환
-                    if (courseSalesStatus != null && courseSalesStatus.published()) {
+                    if (courseSalesStatus != null && courseSalesStatus.purchasable()) {
                         return courseSalesStatus.price();
                     }
 
-                    // DELETED 강좌는 0원 처리
                     return 0;
                 })
+                .sum();
+    }
+
+    private int calculateTotalFromSnapshots(
+            Cart cart,
+            Map<Long, CourseSnapshot> courseSnapshotMap
+    ) {
+        return cart.getCartItems().stream()
+                .map(CartItem::getCourseId)
+                .map(courseSnapshotMap::get)
+                .filter(courseSnapshot -> courseSnapshot != null && courseSnapshot.purchasable())
+                .mapToInt(CourseSnapshot::price)
                 .sum();
     }
 
@@ -122,8 +154,10 @@ public class CartService implements CartUseCase {
             return CartGetItemsResult.empty(cart.getId());
         }
 
-        Map<Long, CourseSnapshot> courseSnapshotMap = courseQueryPort.getCourseSnapshot(cart.getCourseIds());
-        int totalAmount = calculateCartAmount(cart);
+        Map<Long, CourseSnapshot> courseSnapshotMap =
+                courseQueryPort.getCourseSnapshotByIds(cart.getCourseIds());
+
+        int totalAmount = calculateTotalFromSnapshots(cart, courseSnapshotMap);
 
         return CartGetItemsResult.of(cart, courseSnapshotMap, totalAmount);
     }

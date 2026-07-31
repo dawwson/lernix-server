@@ -2,8 +2,8 @@ package com.lxp.aplus.order.application.service;
 
 import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
-import com.lxp.aplus.order.application.port.out.course.CourseQueryPort;
-import com.lxp.aplus.order.application.port.out.course.model.CoursePrice;
+import com.lxp.aplus.order.application.port.out.course.OrderCourseQueryPort;
+import com.lxp.aplus.order.application.port.out.course.model.PurchasableCourse;
 import com.lxp.aplus.order.application.port.out.event.OrderEventPublisherPort;
 import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
@@ -36,7 +36,7 @@ class OrderServiceUnitTest {
     private OrderRepositoryPort orderRepository;
 
     @Mock
-    private CourseQueryPort courseQueryPort;
+    private OrderCourseQueryPort courseQueryPort;
 
     @Mock
     private OrderEventPublisherPort eventPublisher;
@@ -51,10 +51,10 @@ class OrderServiceUnitTest {
         Long userId = 1L;
         List<Long> courseIds = List.of(10L, 20L);
 
-        given(courseQueryPort.getCoursePriceByIds(courseIds))
+        given(courseQueryPort.getPurchasableCourses(courseIds))
                 .willReturn(List.of(
-                        new CoursePrice(10L, 10000),
-                        new CoursePrice(20L, 30000)
+                        new PurchasableCourse(10L, 10000),
+                        new PurchasableCourse(20L, 30000)
                 ));
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -63,7 +63,7 @@ class OrderServiceUnitTest {
 
         // then
         ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-        verify(courseQueryPort).getCoursePriceByIds(courseIds);
+        verify(courseQueryPort).getPurchasableCourses(courseIds);
         verify(orderRepository).save(orderCaptor.capture());
 
         Order savedOrder = orderCaptor.getValue();

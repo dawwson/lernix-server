@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -15,5 +18,14 @@ public class UserInternalUseCase {
     public Optional<UserInternalResult> findById(Long id) {
         return userRepository.findById(id)
                 .map(UserInternalResult::from);
+    }
+
+    public Map<Long, UserInternalResult> findByIds(List<Long> ids) {
+        return userRepository.findByIdIn(ids).stream()
+                .map(UserInternalResult::from)
+                .collect(Collectors.toMap(
+                        UserInternalResult::id,
+                        user -> user
+                ));
     }
 }

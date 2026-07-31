@@ -1,6 +1,6 @@
 package com.lxp.aplus.order.application.port.out.course.model;
 
-public record CoursePrice(
+public record PurchasableCourse(
         Long courseId,
         int price
 ) {
