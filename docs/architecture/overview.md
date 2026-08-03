@@ -4,6 +4,8 @@
 
 Lernix Server는 온라인 강의 도메인을 하나의 Spring Boot 애플리케이션에서 제공하는 모듈러 모놀리스입니다. 모듈은 같은 프로세스와 데이터베이스를 사용하며, 외부에는 HTTP API를 제공합니다.
 
+현재 아키텍처 문서는 전체 시스템을 개괄하되, 최근 구조 개선이 진행된 구매 흐름을 중심으로 상세히 설명합니다. 다른 도메인의 구조와 흐름은 관련 변경이 발생할 때 점진적으로 보완합니다.
+
 ```mermaid
 flowchart LR
     Client["Web / App Client"] --> API["Lernix Server"]
