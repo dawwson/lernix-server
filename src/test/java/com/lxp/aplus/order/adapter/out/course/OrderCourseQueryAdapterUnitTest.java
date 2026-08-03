@@ -2,8 +2,8 @@ package com.lxp.aplus.order.adapter.out.course;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CourseErrorCode;
-import com.lxp.aplus.course.application.internal.dto.CoursePrice;
-import com.lxp.aplus.course.application.internal.usecase.CourseQueryToOrderUseCase;
+import com.lxp.aplus.course.application.port.in.order.CourseQueryToOrderUseCase;
+import com.lxp.aplus.course.application.port.in.order.model.CoursePrice;
 import com.lxp.aplus.order.application.port.out.course.model.PurchasableCourse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
