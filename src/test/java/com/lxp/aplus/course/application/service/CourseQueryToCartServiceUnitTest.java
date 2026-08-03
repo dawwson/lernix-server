@@ -1,10 +1,10 @@
-package com.lxp.aplus.course.application.internal.usecase;
+package com.lxp.aplus.course.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.common.error.code.UserErrorCode;
-import com.lxp.aplus.course.application.internal.dto.CoursePurchaseInfo;
-import com.lxp.aplus.course.application.internal.dto.CourseSalesInfo;
+import com.lxp.aplus.course.application.port.in.cart.model.CoursePurchaseInfo;
+import com.lxp.aplus.course.application.port.in.cart.model.CourseSalesInfo;
 import com.lxp.aplus.course.application.port.out.UserQueryPort;
 import com.lxp.aplus.course.application.result.InstructorResult;
 import com.lxp.aplus.course.domain.Course;
@@ -27,8 +27,8 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CourseQueryToCartUseCase 단위 테스트")
-class CourseQueryToCartUseCaseUnitTest {
+@DisplayName("CourseQueryToCartService 단위 테스트")
+class CourseQueryToCartServiceUnitTest {
 
     @Mock
     private CourseRepository courseRepository;
@@ -37,7 +37,7 @@ class CourseQueryToCartUseCaseUnitTest {
     private UserQueryPort userQueryPort;
 
     @InjectMocks
-    private CourseQueryToCartUseCase useCase;
+    private CourseQueryToCartService service;
 
     @Test
     @DisplayName("판매 정보는 강사 조회 없이 List로 반환한다")
@@ -48,7 +48,7 @@ class CourseQueryToCartUseCaseUnitTest {
                 createCourse(20L, 2L, CourseStatus.DELETED, 30000)
         ));
 
-        List<CourseSalesInfo> result = useCase.getCourseSalesInfoByIds(courseIds);
+        List<CourseSalesInfo> result = service.getCourseSalesInfoByIds(courseIds);
 
         assertThat(result).containsExactly(
                 new CourseSalesInfo(10L, 10000, true),
@@ -70,7 +70,7 @@ class CourseQueryToCartUseCaseUnitTest {
                 1L, new InstructorResult(1L, "강사1")
         ));
 
-        Map<Long, CoursePurchaseInfo> result = useCase.getCoursePurchaseInfoByIds(courseIds);
+        Map<Long, CoursePurchaseInfo> result = service.getCoursePurchaseInfoByIds(courseIds);
 
         then(userQueryPort).should().findInstructorsByIds(instructorIds);
         assertThat(result.get(10L).instructorName()).isEqualTo("강사1");
@@ -86,7 +86,7 @@ class CourseQueryToCartUseCaseUnitTest {
                 .willReturn(List.of(createCourse(10L, 1L, CourseStatus.PUBLISHED, 10000)));
 
         assertBusinessError(
-                () -> useCase.getCoursePurchaseInfoByIds(courseIds),
+                () -> service.getCoursePurchaseInfoByIds(courseIds),
                 CourseErrorCode.COURSE_NOT_FOUND
         );
         then(userQueryPort).should(never()).findInstructorsByIds(org.mockito.ArgumentMatchers.anyList());
@@ -101,7 +101,7 @@ class CourseQueryToCartUseCaseUnitTest {
         given(userQueryPort.findInstructorsByIds(List.of(1L))).willReturn(Map.of());
 
         assertBusinessError(
-                () -> useCase.getCoursePurchaseInfoByIds(courseIds),
+                () -> service.getCoursePurchaseInfoByIds(courseIds),
                 UserErrorCode.USER_NOT_FOUND
         );
     }

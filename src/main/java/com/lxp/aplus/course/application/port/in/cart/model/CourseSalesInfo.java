@@ -1,4 +1,4 @@
-package com.lxp.aplus.course.application.internal.dto;
+package com.lxp.aplus.course.application.port.in.cart.model;
 
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseStatus;

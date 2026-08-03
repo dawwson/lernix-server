@@ -1,10 +1,11 @@
-package com.lxp.aplus.course.application.internal.usecase;
+package com.lxp.aplus.course.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.common.error.code.UserErrorCode;
-import com.lxp.aplus.course.application.internal.dto.CoursePurchaseInfo;
-import com.lxp.aplus.course.application.internal.dto.CourseSalesInfo;
+import com.lxp.aplus.course.application.port.in.cart.CourseQueryToCartUseCase;
+import com.lxp.aplus.course.application.port.in.cart.model.CoursePurchaseInfo;
+import com.lxp.aplus.course.application.port.in.cart.model.CourseSalesInfo;
 import com.lxp.aplus.course.application.port.out.UserQueryPort;
 import com.lxp.aplus.course.application.result.InstructorResult;
 import com.lxp.aplus.course.domain.Course;
@@ -20,11 +21,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CourseQueryToCartUseCase {
+public class CourseQueryToCartService implements CourseQueryToCartUseCase {
 
     private final CourseRepository courseRepository;
     private final UserQueryPort userQueryPort;
 
+    @Override
     public List<CourseSalesInfo> getCourseSalesInfoByIds(List<Long> courseIds) {
         if (courseIds.isEmpty()) {
             return List.of();
@@ -35,6 +37,7 @@ public class CourseQueryToCartUseCase {
                 .toList();
     }
 
+    @Override
     public Map<Long, CoursePurchaseInfo> getCoursePurchaseInfoByIds(List<Long> courseIds) {
         if (courseIds.isEmpty()) {
             return Map.of();
