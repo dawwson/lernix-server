@@ -1,8 +1,8 @@
-package com.lxp.aplus.course.application.internal.usecase;
+package com.lxp.aplus.course.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.CourseErrorCode;
-import com.lxp.aplus.course.application.internal.dto.CoursePrice;
+import com.lxp.aplus.course.application.port.in.order.model.CoursePrice;
 import com.lxp.aplus.course.domain.Course;
 import com.lxp.aplus.course.domain.CourseRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -20,14 +20,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CourseQueryToOrderUseCase 단위 테스트")
-class CourseQueryToOrderUseCaseUnitTest {
+@DisplayName("CourseQueryToOrderService 단위 테스트")
+class CourseQueryToOrderServiceUnitTest {
 
     @Mock
     private CourseRepository courseRepository;
 
     @InjectMocks
-    private CourseQueryToOrderUseCase useCase;
+    private CourseQueryToOrderService service;
 
     @Test
     @DisplayName("요청한 강좌가 모두 존재하면 강좌별 가격을 반환한다")
@@ -39,7 +39,7 @@ class CourseQueryToOrderUseCaseUnitTest {
         );
         given(courseRepository.findByIdIn(courseIds)).willReturn(courses);
 
-        List<CoursePrice> result = useCase.getCoursePrices(courseIds);
+        List<CoursePrice> result = service.getCoursePrices(courseIds);
 
         then(courseRepository).should().findByIdIn(courseIds);
         assertThat(result).containsExactly(
@@ -55,7 +55,7 @@ class CourseQueryToOrderUseCaseUnitTest {
         given(courseRepository.findByIdIn(courseIds))
                 .willReturn(List.of(Course.builder().id(10L).price(10000).build()));
 
-        assertThatThrownBy(() -> useCase.getCoursePrices(courseIds))
+        assertThatThrownBy(() -> service.getCoursePrices(courseIds))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CourseErrorCode.COURSE_NOT_FOUND);
