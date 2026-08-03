@@ -24,4 +24,5 @@ ADR은 대안이 있었고 장기적으로 영향을 주는 기술 결정과 그
 
 ## 목록
 
-아직 등록된 ADR이 없습니다.
+- [0001. Port와 전용 모델로 BC 경계 보호](0001-protect-bc-boundaries-with-ports.md) — Accepted
+- [0002. 구매 완료 후속 처리를 프로세스 내부 이벤트로 분리](0002-use-in-process-events-for-purchase-completion.md) — Accepted

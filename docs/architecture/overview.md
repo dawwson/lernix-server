@@ -43,7 +43,7 @@ flowchart LR
 
 구매는 Cart, Order, Payment, Enrollment가 책임을 나누어 처리합니다. Payment 승인 후 `PaymentCompletedEvent`, 주문 완료 후 `OrderCompletedEvent`가 같은 애플리케이션 프로세스 안에서 전달됩니다.
 
-자세한 API 순서와 제약은 [구매 흐름](purchase-flow.md)을 참고합니다.
+모듈 간 조회 규칙은 [Bounded Context 경계](bounded-context-boundaries.md), 자세한 구매 API 순서와 제약은 [구매 흐름](purchase-flow.md)을 참고합니다.
 
 ## 데이터와 외부 연동
 
@@ -57,4 +57,3 @@ flowchart LR
 - 모듈은 독립 배포되지 않으며 데이터베이스도 분리되어 있지 않습니다.
 - Spring Application Event는 프로세스 내부 이벤트이며 메시지 브로커가 아닙니다.
 - 패키지 아키텍처가 모든 모듈에서 동일하지 않습니다.
-
