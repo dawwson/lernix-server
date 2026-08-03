@@ -3,9 +3,9 @@ package com.lxp.aplus.cart.adapter.out.course;
 import com.lxp.aplus.cart.application.port.out.course.CartCourseQueryPort;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSalesStatus;
 import com.lxp.aplus.cart.application.port.out.course.model.CourseSnapshot;
-import com.lxp.aplus.course.application.internal.dto.CoursePurchaseInfo;
-import com.lxp.aplus.course.application.internal.dto.CourseSalesInfo;
-import com.lxp.aplus.course.application.internal.usecase.CourseQueryToCartUseCase;
+import com.lxp.aplus.course.application.port.in.cart.CourseQueryToCartUseCase;
+import com.lxp.aplus.course.application.port.in.cart.model.CoursePurchaseInfo;
+import com.lxp.aplus.course.application.port.in.cart.model.CourseSalesInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
