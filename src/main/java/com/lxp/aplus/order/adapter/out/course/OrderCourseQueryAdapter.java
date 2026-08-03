@@ -1,6 +1,6 @@
 package com.lxp.aplus.order.adapter.out.course;
 
-import com.lxp.aplus.course.application.internal.usecase.CourseQueryToOrderUseCase;
+import com.lxp.aplus.course.application.port.in.order.CourseQueryToOrderUseCase;
 import com.lxp.aplus.order.application.port.out.course.OrderCourseQueryPort;
 import com.lxp.aplus.order.application.port.out.course.model.PurchasableCourse;
 import lombok.RequiredArgsConstructor;
