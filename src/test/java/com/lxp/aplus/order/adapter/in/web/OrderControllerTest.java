@@ -4,7 +4,7 @@ import com.lxp.aplus.common.security.JwtAuthenticationFilter;
 import com.lxp.aplus.order.application.port.in.OrderUseCase;
 import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
-import com.lxp.aplus.support.WithMockAuthenticatedUser;
+import com.lxp.aplus.testing.security.WithMockAuthenticatedUser;
 import com.lxp.aplus.user.application.port.in.UserQueryUseCase;
 import com.lxp.aplus.user.application.port.out.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static com.lxp.aplus.support.WithMockAuthenticatedUser.USER_ID;
+import static com.lxp.aplus.testing.security.WithMockAuthenticatedUser.USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;

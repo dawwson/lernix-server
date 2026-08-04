@@ -2,7 +2,7 @@ package com.lxp.aplus.payment.adapter.out.persistence;
 
 import com.lxp.aplus.payment.domain.Payment;
 import com.lxp.aplus.payment.domain.PaymentStatus;
-import com.lxp.aplus.support.PersistenceTestConfiguration;
+import com.lxp.aplus.testing.config.PersistenceTestConfiguration;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

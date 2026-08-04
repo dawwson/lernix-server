@@ -1,4 +1,4 @@
-package com.lxp.aplus.support;
+package com.lxp.aplus.testing.security;
 
 import org.springframework.security.test.context.support.WithSecurityContext;
 

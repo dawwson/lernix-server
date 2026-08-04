@@ -1,4 +1,4 @@
-package com.lxp.aplus.support;
+package com.lxp.aplus.testing.config;
 
 import com.lxp.aplus.cart.adapter.out.persistence.CartJpaRepository;
 import com.lxp.aplus.cart.domain.Cart;

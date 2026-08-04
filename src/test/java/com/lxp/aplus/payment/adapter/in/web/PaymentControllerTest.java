@@ -5,7 +5,7 @@ import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentPrepareCommand;
 import com.lxp.aplus.payment.application.port.in.model.result.PaymentPrepareResult;
-import com.lxp.aplus.support.WithMockAuthenticatedUser;
+import com.lxp.aplus.testing.security.WithMockAuthenticatedUser;
 import com.lxp.aplus.user.application.port.in.UserQueryUseCase;
 import com.lxp.aplus.user.application.port.out.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 
-import static com.lxp.aplus.support.WithMockAuthenticatedUser.USER_ID;
+import static com.lxp.aplus.testing.security.WithMockAuthenticatedUser.USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;

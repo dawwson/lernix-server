@@ -2,7 +2,7 @@ package com.lxp.aplus.cart.adapter.out.persistence;
 
 import com.lxp.aplus.cart.domain.Cart;
 import com.lxp.aplus.cart.domain.CartItem;
-import com.lxp.aplus.support.PersistenceTestConfiguration;
+import com.lxp.aplus.testing.config.PersistenceTestConfiguration;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package com.lxp.aplus.support;
+package com.lxp.aplus.testing.security;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

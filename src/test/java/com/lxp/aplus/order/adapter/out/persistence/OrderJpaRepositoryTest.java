@@ -3,7 +3,7 @@ package com.lxp.aplus.order.adapter.out.persistence;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
 import com.lxp.aplus.order.domain.OrderStatus;
-import com.lxp.aplus.support.PersistenceTestConfiguration;
+import com.lxp.aplus.testing.config.PersistenceTestConfiguration;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

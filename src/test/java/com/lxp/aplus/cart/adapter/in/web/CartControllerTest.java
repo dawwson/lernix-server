@@ -7,7 +7,7 @@ import com.lxp.aplus.cart.application.port.in.model.result.CartAddItemResult;
 import com.lxp.aplus.cart.application.port.in.model.result.CartGetItemsResult;
 import com.lxp.aplus.cart.application.port.in.model.result.CartRemoveItemResult;
 import com.lxp.aplus.common.security.JwtAuthenticationFilter;
-import com.lxp.aplus.support.WithMockAuthenticatedUser;
+import com.lxp.aplus.testing.security.WithMockAuthenticatedUser;
 import com.lxp.aplus.user.application.port.in.UserQueryUseCase;
 import com.lxp.aplus.user.application.port.out.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.lxp.aplus.support.WithMockAuthenticatedUser.USER_ID;
+import static com.lxp.aplus.testing.security.WithMockAuthenticatedUser.USER_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
