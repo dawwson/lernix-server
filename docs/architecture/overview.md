@@ -35,11 +35,12 @@ flowchart LR
 현재 패키지 구조는 전환 과정에 있습니다.
 
 - Cart, Order, Payment는 `domain`, `application`, `adapter`와 입출력 port를 중심으로 구성됩니다.
-- Category, Course, Enrollment, Progress, Review, User는 `presentation`, `application`, `domain`, `infrastructure` 중심의 계층형 구조를 사용합니다.
+- Course는 구매 경계에 Inbound Port를 적용했지만 기존 `presentation`, `application`, `domain`, `infrastructure` 구조도 함께 사용합니다.
+- Category, Enrollment, Progress, Review, User는 계층형 패키지 구조를 사용합니다.
 - 모듈 간 조회는 application port와 adapter 또는 내부 use case를 통해 연결되는 부분이 있습니다.
 - 구매 완료 흐름의 모듈 간 상태 변경은 Spring Application Event로 전달됩니다.
 
-새 작업은 변경 대상 모듈의 기존 구조를 우선 따릅니다. 구조를 통일하는 결정은 기능 변경에 섞지 않고 별도의 ADR로 남깁니다.
+Cart, Order, Payment, Course에 적용하는 세부 규칙은 [패키지 컨벤션](package-conventions.md)을 참고합니다. 새 작업은 변경 대상 모듈의 현재 구조를 우선 따르며, 관련 없는 기존 코드를 컨벤션에 맞추기 위해 함께 이동하지 않습니다.
 
 ## 주요 흐름
 

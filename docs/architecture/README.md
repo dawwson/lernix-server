@@ -3,6 +3,7 @@
 현재 시스템의 구조와 주요 런타임 흐름을 설명합니다.
 
 - [전체 아키텍처 개요](overview.md)
+- [패키지 컨벤션](package-conventions.md)
 - [Bounded Context 경계](bounded-context-boundaries.md)
 - [구매 흐름](purchase-flow.md)
 
