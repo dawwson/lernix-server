@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:lernix-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+        jdbc:
+          time_zone: Asia/Seoul
+
+  flyway:
+    enabled: false
+
+app:
+  cdn:
+    base-url: http://localhost/test-cdn
+
+file:
+  storage:
+    base-path: /tmp/lernix-test-storage
+    public-url-prefix: /test-files
+
+minio:
+  bucket: test-bucket
+  endpoint: http://localhost:9000
+  access-key: test-access-key
+  secret-key: test-secret-key
+  resource_expire_seconds: 120
+
+cloud:
+  aws:
+    s3:
+      bucket: test-bucket
+      expire_seconds: 120000
+    stack:
+      auto: false
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: test-access-key
+      secret-key: test-secret-key
+
+storage:
+  type: s3

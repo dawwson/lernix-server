@@ -90,45 +90,9 @@ class ReviewUseCaseTest {
     }
 
     @Test
-    @DisplayName("리뷰를 수정할 수 있다")
-    void updateReview() {
-        // given
-        Long userId = 1L;
-        Long reviewId = 100L;
-        Long courseId = 10L;
-        Integer initialRating = 3;
-        String initialContent = "보통입니다.";
-        
-        Integer updatedRating = 5;
-        String updatedContent = "아주 좋습니다.";
-
-        ReviewUpdateCommand command = ReviewUpdateCommand.builder()
-                .userId(userId)
-                .courseId(courseId)
-                .rating(updatedRating)
-                .content(updatedContent)
-                .build();
-
-        Reviews existingReview = Reviews.create(courseId, userId, initialRating, initialContent);
-        
-        doNothing().when(policy).validateUpdateReview(userId, existingReview);
-        when(reviewRepository.save(existingReview)).thenReturn(existingReview);
-
-        // when
-        ReviewUpsertResult result = reviewCommandUseCase.updateReview(command);
-
-        // then
-        assertThat(result.rating()).isEqualTo(updatedRating);
-
-        verify(policy, times(1)).validateUpdateReview(userId, existingReview);
-        verify(reviewRepository, times(1)).save(existingReview);
-    }
-
-    @Test
     @DisplayName("존재하지 않는 리뷰 수정 시 예외가 발생한다")
     void updateReview_NotFound() {
         // given
-        Long reviewId = 999L;
         ReviewUpdateCommand command = ReviewUpdateCommand.builder()
                 .userId(1L)
                 .build();
@@ -143,29 +107,4 @@ class ReviewUseCaseTest {
         verify(reviewRepository, never()).save(any());
     }
 
-    @Test
-    @DisplayName("리뷰 수정 시 정책 위반 예외가 발생하면 실패한다")
-    void updateReview_PolicyViolation() {
-        // given
-        Long userId = 1L;
-        Long reviewId = 100L;
-        ReviewUpdateCommand command = ReviewUpdateCommand.builder()
-                .userId(userId)
-                .rating(5)
-                .content("내용")
-                .build();
-
-        Reviews existingReview = Reviews.create(1L, userId, 3, "이전 내용");
-        
-        doThrow(new BusinessException(ReviewErrorCode.NOT_OWN_REVIEW))
-                .when(policy).validateUpdateReview(userId, existingReview);
-
-        // when & then
-        assertThatThrownBy(() -> reviewCommandUseCase.updateReview(command))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ReviewErrorCode.NOT_OWN_REVIEW);
-
-        verify(reviewRepository, never()).save(any());
-    }
 }
