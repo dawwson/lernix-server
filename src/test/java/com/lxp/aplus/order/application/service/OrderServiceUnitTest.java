@@ -1,5 +1,7 @@
 package com.lxp.aplus.order.application.service;
 
+import com.lxp.aplus.common.error.BusinessException;
+import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
 import com.lxp.aplus.order.application.port.out.course.OrderCourseQueryPort;
@@ -24,8 +26,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,5 +116,77 @@ class OrderServiceUnitTest {
                         org.assertj.core.groups.Tuple.tuple(10L, 100L),
                         org.assertj.core.groups.Tuple.tuple(20L, 200L)
                 );
+    }
+
+    @Test
+    @DisplayName("완료할 주문이 없으면 주문 없음 예외가 발생하고 이벤트를 발행하지 않는다")
+    void completeOrder_missingOrder_throwsOrderNotFoundWithoutEvent() {
+        String orderId = "missing-order";
+        given(orderRepository.findById(orderId)).willReturn(Optional.empty());
+
+        assertOrderError(
+                () -> orderService.completeOrder(
+                        orderId,
+                        "payment-1",
+                        BigDecimal.valueOf(40_000)
+                ),
+                OrderErrorCode.ORDER_NOT_FOUND
+        );
+
+        then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
+    }
+
+    @Test
+    @DisplayName("승인 금액이 주문 총액과 다르면 이벤트를 발행하지 않는다")
+    void completeOrder_mismatchedAmount_doesNotPublishEvent() {
+        String orderId = "order-1";
+        Order order = Order.create(
+                1L,
+                List.of(OrderItem.createCourseItem(10L, BigDecimal.valueOf(40_000)))
+        );
+        ReflectionTestUtils.setField(order, "orderId", orderId);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        assertOrderError(
+                () -> orderService.completeOrder(
+                        orderId,
+                        "payment-1",
+                        BigDecimal.valueOf(39_000)
+                ),
+                OrderErrorCode.ORDER_AMOUNT_MISMATCH
+        );
+
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getApprovedPaymentId()).isNull();
+        then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
+    }
+
+    @Test
+    @DisplayName("이미 완료된 주문을 다시 완료하면 이벤트를 발행하지 않는다")
+    void completeOrder_completedOrder_doesNotPublishEventAgain() {
+        String orderId = "order-1";
+        BigDecimal amount = BigDecimal.valueOf(40_000);
+        Order order = Order.create(
+                1L,
+                List.of(OrderItem.createCourseItem(10L, amount))
+        );
+        ReflectionTestUtils.setField(order, "orderId", orderId);
+        order.completeWithApprovedPayment("payment-1", amount);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        assertOrderError(
+                () -> orderService.completeOrder(orderId, "payment-2", amount),
+                OrderErrorCode.ORDER_INVALID_STATUS
+        );
+
+        assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
+        then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
+    }
+
+    private void assertOrderError(Runnable action, OrderErrorCode errorCode) {
+        assertThatThrownBy(action::run)
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(errorCode);
     }
 }
