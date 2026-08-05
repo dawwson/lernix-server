@@ -27,6 +27,8 @@ public class CourseQueryToOrderService implements CourseQueryToOrderUseCase {
             throw new BusinessException(CourseErrorCode.COURSE_NOT_FOUND);
         }
 
+        courses.forEach(Course::validatePurchasable);
+
         return courses.stream()
                 .map(CoursePrice::from)
                 .toList();

@@ -1,6 +1,7 @@
 package com.lxp.aplus.order.application.service;
 
 import com.lxp.aplus.common.error.BusinessException;
+import com.lxp.aplus.common.error.code.CourseErrorCode;
 import com.lxp.aplus.common.error.code.OrderErrorCode;
 import com.lxp.aplus.order.application.port.in.model.command.OrderCreateCommand;
 import com.lxp.aplus.order.application.port.in.model.result.OrderCreateResult;
@@ -77,6 +78,20 @@ class OrderServiceUnitTest {
         assertThat(savedOrder.getOrderItems()).hasSize(2);
         assertThat(result.orderId()).isEqualTo(savedOrder.getOrderId());
         assertThat(result.amount()).isEqualByComparingTo(savedOrder.getAmount());
+    }
+
+    @Test
+    @DisplayName("판매할 수 없는 강좌가 포함되면 주문을 저장하지 않는다")
+    void createOrder_unpurchasableCourse_doesNotSaveOrder() {
+        Long userId = 1L;
+        List<Long> courseIds = List.of(10L, 20L);
+        BusinessException exception = new BusinessException(CourseErrorCode.COURSE_NOT_PURCHASABLE);
+        given(courseQueryPort.getPurchasableCourses(courseIds)).willThrow(exception);
+
+        assertThatThrownBy(() -> orderService.createOrder(new OrderCreateCommand(userId, courseIds)))
+                .isSameAs(exception);
+
+        then(orderRepository).should(never()).save(any(Order.class));
     }
 
     @Test

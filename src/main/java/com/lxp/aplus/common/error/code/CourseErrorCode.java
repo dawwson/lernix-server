@@ -16,7 +16,8 @@ public enum CourseErrorCode implements ErrorCode {
     COURSE_CONTENT_EMPTY(HttpStatus.BAD_REQUEST, "EC006", "모든 강의에는 영상 또는 자료가 등록되어야 합니다."),
     COURSE_THUMBNAIL_EXTENSION_MISSING(HttpStatus.BAD_REQUEST, "EC007", "강좌 썸네일 파일에는 확장자가 포함되어야 합니다."),
     COURSE_THUMBNAIL_EXTENSION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "EC008", "강좌 썸네일은 jpg, jpeg, png, webp 형식만 업로드할 수 있습니다."),
-    COURSE_THUMBNAIL_CONTENT_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "EC009", "강좌 썸네일은 image/jpeg, image/png, image/webp 형식만 업로드할 수 있습니다."),;
+    COURSE_THUMBNAIL_CONTENT_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "EC009", "강좌 썸네일은 image/jpeg, image/png, image/webp 형식만 업로드할 수 있습니다."),
+    COURSE_NOT_PURCHASABLE(HttpStatus.BAD_REQUEST, "EC010", "판매 중인 강좌만 주문할 수 있습니다.");
 
 
 

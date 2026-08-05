@@ -33,7 +33,7 @@ sequenceDiagram
 ## 모듈 책임
 
 - **Cart**: 구매 후보 강좌를 보관하고 Course의 현재 가격과 판매 상태를 반영합니다.
-- **Order**: 구매 항목과 금액을 확정하고 결제 완료에 따라 주문 상태를 변경합니다.
+- **Order**: 구매 항목과 금액을 확정하고 결제 완료에 따라 주문 상태를 변경합니다. 주문 생성 시 Course가 강좌의 존재 여부와 판매 상태를 확인하며, `PUBLISHED` 강좌의 현재 가격만 Order에 제공합니다.
 - **Payment**: 결제 준비, 승인, 취소, 환불을 담당하고 승인 후 결제 완료 이벤트를 발행합니다.
 - **Enrollment**: 주문 완료 이벤트를 받아 수강권을 생성하며 Payment를 직접 알지 않습니다.
 
@@ -53,4 +53,3 @@ Order -> Enrollment OrderCompletedEvent
 - 이벤트 listener는 트랜잭션 커밋 이후 실행되므로 후속 처리까지 하나의 원자적 트랜잭션으로 묶이지 않습니다.
 - Enrollment listener는 `@Retryable`로 일부 데이터 접근 장애를 재시도합니다.
 - 메시지 브로커와 Outbox 패턴은 적용하지 않았습니다.
-
