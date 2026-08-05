@@ -177,6 +177,12 @@ public class Course extends BaseAggregateRoot {
         }
     }
 
+    public void validatePurchasable() {
+        if (this.courseStatus != CourseStatus.PUBLISHED) {
+            throw new BusinessException(CourseErrorCode.COURSE_NOT_PURCHASABLE);
+        }
+    }
+
     private void validateSectionOrder(int orderIndex) {
         boolean isOrderIndexDuplicated = this.sections.stream()
                 .anyMatch(section -> section.getOrderIndex() == orderIndex);
