@@ -115,6 +115,15 @@ public class Payment extends BaseAggregateRoot {
         }
     }
 
+    /*
+     * 주문 식별자 검증
+     */
+    public void validateOrder(String orderId) {
+        if (!Objects.equals(this.orderId, orderId)) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_ORDER_MISMATCH);
+        }
+    }
+
     /**
      * 결제 승인
      * - Payment amount는 승인된 금액과 일치해야 한다
