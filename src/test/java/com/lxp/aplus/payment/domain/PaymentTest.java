@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Payment 도메인 테스트")
@@ -35,6 +36,30 @@ class PaymentTest {
                 () -> Payment.create(null, 1L, BigDecimal.valueOf(40_000)),
                 PaymentErrorCode.PAYMENT_INVALID_ORDER_ID
         );
+    }
+
+    @Test
+    @DisplayName("결제 소유자가 접근하면 권한 검증을 통과한다")
+    void validateOwner_owner_completesNormally() {
+        Payment payment = payment(40_000);
+
+        assertThatCode(() -> payment.validateOwner(1L))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("다른 사용자가 접근하면 권한 예외가 발생하고 결제 상태를 유지한다")
+    void validateOwner_differentUser_throwsAccessDeniedAndKeepsState() {
+        Payment payment = payment(40_000);
+
+        assertPaymentError(
+                () -> payment.validateOwner(2L),
+                PaymentErrorCode.PAYMENT_ACCESS_DENIED
+        );
+
+        assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getPaymentKey()).isNull();
+        assertThat(payment.getApprovedAt()).isNull();
     }
 
     @Test

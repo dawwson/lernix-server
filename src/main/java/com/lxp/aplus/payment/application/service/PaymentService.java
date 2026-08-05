@@ -51,13 +51,16 @@ public class PaymentService implements PaymentUseCase {
         Payment payment = paymentRepository.findByOrderId(command.orderId())
                 .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 
-        // 2. PG사에 최종 승인 요청
+        // 2. 결제 소유자 검증
+        payment.validateOwner(command.userId());
+
+        // 3. PG사에 최종 승인 요청
         // TODO: 추후 구현. 성공했다고 가정함
 
-        // 3. 도메인 불변성 검증 -> 상태 변경
+        // 4. 도메인 불변성 검증 -> 상태 변경
         payment.approve(command.paymentKey(), command.amount());
 
-        // 4. Payment 저장
+        // 5. Payment 저장
         paymentRepository.save(payment);
 
         eventPublisher.publish(
