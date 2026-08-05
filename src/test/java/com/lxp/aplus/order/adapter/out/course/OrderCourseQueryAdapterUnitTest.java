@@ -48,10 +48,10 @@ class OrderCourseQueryAdapterUnitTest {
     }
 
     @Test
-    @DisplayName("Course 조회 예외를 변경하지 않고 전달한다")
-    void getPurchasableCourses_PropagatesException() {
+    @DisplayName("Course가 판매 불가 예외를 반환하면 변경하지 않고 전달한다")
+    void getPurchasableCourses_unpurchasableCourse_propagatesException() {
         List<Long> courseIds = List.of(10L, 20L);
-        BusinessException exception = new BusinessException(CourseErrorCode.COURSE_NOT_FOUND);
+        BusinessException exception = new BusinessException(CourseErrorCode.COURSE_NOT_PURCHASABLE);
         given(courseQueryToOrderUseCase.getCoursePrices(courseIds)).willThrow(exception);
 
         assertThatThrownBy(() -> adapter.getPurchasableCourses(courseIds))
