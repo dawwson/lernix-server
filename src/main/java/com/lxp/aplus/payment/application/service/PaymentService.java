@@ -12,7 +12,6 @@ import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
 import com.lxp.aplus.payment.application.port.out.order.model.PayableOrder;
 import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,14 +38,14 @@ public class PaymentService implements PaymentUseCase {
         // 2. 이전 결제 시도에 따른 재시도 가능 여부 확인
         List<Payment> previousPayments = paymentRepository.findAllByOrderId(order.orderId());
 
-        boolean hasCompletedPayment = previousPayments.stream()
-                .anyMatch(this::isCompletedPayment);
-        if (hasCompletedPayment) {
+        boolean hasPaymentBlockingNewAttempt = previousPayments.stream()
+                .anyMatch(Payment::blocksNewAttempt);
+        if (hasPaymentBlockingNewAttempt) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
         }
 
         Payment pendingPayment = previousPayments.stream()
-                .filter(payment -> payment.getPaymentStatus() == PaymentStatus.PENDING)
+                .filter(Payment::isPending)
                 .findFirst()
                 .orElse(null);
         if (pendingPayment != null) {
@@ -96,9 +95,4 @@ public class PaymentService implements PaymentUseCase {
         );
     }
 
-    private boolean isCompletedPayment(Payment payment) {
-        return payment.getPaymentStatus() == PaymentStatus.APPROVED
-                || payment.getPaymentStatus() == PaymentStatus.CANCELED
-                || payment.getPaymentStatus() == PaymentStatus.REFUNDED;
-    }
 }
