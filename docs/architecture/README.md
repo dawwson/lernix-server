@@ -4,6 +4,7 @@
 
 - [전체 아키텍처 개요](overview.md)
 - [패키지 컨벤션](package-conventions.md)
+- [API 응답 포맷](api-response-conventions.md)
 - [테스트 컨벤션](test-conventions.md)
 - [Bounded Context 경계](bounded-context-boundaries.md)
 - [구매 흐름](purchase-flow.md)
