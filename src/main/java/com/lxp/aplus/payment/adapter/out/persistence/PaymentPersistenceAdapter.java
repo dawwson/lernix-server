@@ -5,6 +5,7 @@ import com.lxp.aplus.payment.domain.Payment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,7 +20,12 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
     }
 
     @Override
-    public Optional<Payment> findByOrderId(String orderId) {
-        return jpaRepository.findByOrderId(orderId);
+    public Optional<Payment> findById(String paymentId) {
+        return jpaRepository.findById(paymentId);
+    }
+
+    @Override
+    public List<Payment> findAllByOrderId(String orderId) {
+        return jpaRepository.findAllByOrderId(orderId);
     }
 }
