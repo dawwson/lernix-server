@@ -75,12 +75,13 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_committedTransaction_completesOrderAndPublishesEnrollmentCommand() {
         paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
+                payment.getPaymentId(),
                 order.getOrderId(),
                 "payment-key",
                 AMOUNT
         ));
 
-        Payment approvedPayment = paymentRepository.findByOrderId(order.getOrderId()).orElseThrow();
+        Payment approvedPayment = paymentRepository.findById(payment.getPaymentId()).orElseThrow();
         Order completedOrder = orderRepository.findById(order.getOrderId()).orElseThrow();
 
         assertThat(approvedPayment.getPaymentStatus()).isEqualTo(PaymentStatus.APPROVED);
@@ -97,6 +98,7 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_mismatchedAmount_keepsOrderPending() {
         assertThatThrownBy(() -> paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
+                payment.getPaymentId(),
                 order.getOrderId(),
                 "payment-key",
                 BigDecimal.valueOf(39_000)
@@ -105,7 +107,7 @@ class PurchaseCompletionEventIntegrationTest {
                 .extracting("errorCode")
                 .isEqualTo(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
 
-        Payment pendingPayment = paymentRepository.findByOrderId(order.getOrderId()).orElseThrow();
+        Payment pendingPayment = paymentRepository.findById(payment.getPaymentId()).orElseThrow();
         Order pendingOrder = orderRepository.findById(order.getOrderId()).orElseThrow();
         assertThat(pendingPayment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
         assertThat(pendingPayment.getPaymentKey()).isNull();

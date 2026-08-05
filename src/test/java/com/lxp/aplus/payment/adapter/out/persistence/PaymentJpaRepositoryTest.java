@@ -30,8 +30,8 @@ class PaymentJpaRepositoryTest {
     private EntityManager entityManager;
 
     @Test
-    @DisplayName("결제를 저장하면 주문 ID로 조회할 수 있다")
-    void save_payment_findsByOrderId() {
+    @DisplayName("결제를 저장하면 결제 ID로 조회할 수 있다")
+    void save_payment_findsByPaymentId() {
         Payment payment = Payment.create(
                 "order-1",
                 1L,
@@ -41,7 +41,7 @@ class PaymentJpaRepositoryTest {
         repository.save(payment);
         flushAndClear();
 
-        Payment result = repository.findByOrderId("order-1").orElseThrow();
+        Payment result = repository.findById(payment.getPaymentId()).orElseThrow();
         assertThat(result.getPaymentId()).isEqualTo(payment.getPaymentId());
         assertThat(result.getUserId()).isEqualTo(1L);
         assertThat(result.getAmount()).isEqualByComparingTo("40000");
@@ -56,20 +56,45 @@ class PaymentJpaRepositoryTest {
         repository.save(payment);
         flushAndClear();
 
-        Payment savedPayment = repository.findByOrderId("order-1").orElseThrow();
+        Payment savedPayment = repository.findById(payment.getPaymentId()).orElseThrow();
         savedPayment.approve("payment-key", amount);
         flushAndClear();
 
-        Payment result = repository.findByOrderId("order-1").orElseThrow();
+        Payment result = repository.findById(payment.getPaymentId()).orElseThrow();
         assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.APPROVED);
         assertThat(result.getPaymentKey()).isEqualTo("payment-key");
         assertThat(result.getApprovedAt()).isNotNull();
     }
 
     @Test
-    @DisplayName("존재하지 않는 주문 ID로 결제를 조회하면 빈 결과를 반환한다")
-    void findByOrderId_missingOrder_returnsEmpty() {
-        assertThat(repository.findByOrderId("missing-order")).isEmpty();
+    @DisplayName("존재하지 않는 결제 ID로 조회하면 빈 결과를 반환한다")
+    void findById_missingPayment_returnsEmpty() {
+        assertThat(repository.findById("missing-payment")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("동일 주문의 실패한 결제 시도를 모두 저장하고 조회할 수 있다")
+    void findAllByOrderId_failedPayments_returnsAllAttempts() {
+        BigDecimal amount = BigDecimal.valueOf(40_000);
+        Payment firstPayment = Payment.create("order-1", 1L, amount);
+        Payment secondPayment = Payment.create("order-1", 1L, amount);
+        firstPayment.fail();
+        secondPayment.fail();
+        repository.saveAllAndFlush(java.util.List.of(firstPayment, secondPayment));
+        entityManager.clear();
+
+        assertThat(repository.findAllByOrderId("order-1"))
+                .extracting(Payment::getPaymentId, Payment::getPaymentStatus)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple(
+                                firstPayment.getPaymentId(),
+                                PaymentStatus.FAILED
+                        ),
+                        org.assertj.core.groups.Tuple.tuple(
+                                secondPayment.getPaymentId(),
+                                PaymentStatus.FAILED
+                        )
+                );
     }
 
     @Test

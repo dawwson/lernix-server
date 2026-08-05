@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record PaymentConfirmRequest(
+        @NotBlank(message = "paymentId는 필수입니다.")
+        String paymentId,
+
         @NotBlank(message = "orderId는 필수입니다.")
         String orderId,
 
@@ -22,6 +25,7 @@ public record PaymentConfirmRequest(
 
         return PaymentConfirmCommand.builder()
                 .userId(userId)
+                .paymentId(paymentId)
                 .orderId(orderId)
                 .amount(amount)
                 .paymentKey(paymentKey)

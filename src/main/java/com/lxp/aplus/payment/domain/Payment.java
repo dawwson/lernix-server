@@ -115,6 +115,29 @@ public class Payment extends BaseAggregateRoot {
         }
     }
 
+    /*
+     * 주문 식별자 검증
+     */
+    public void validateOrder(String orderId) {
+        if (!Objects.equals(this.orderId, orderId)) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_ORDER_MISMATCH);
+        }
+    }
+
+    /*
+     * 재시도 가능 여부 검증
+     * - APPROVED, CANCELED, REFUNDED 상태의 Payment는 재결제할 수 없다
+     */
+    public boolean blocksNewAttempt() {
+        return paymentStatus == PaymentStatus.APPROVED
+                || paymentStatus == PaymentStatus.CANCELED
+                || paymentStatus == PaymentStatus.REFUNDED;
+    }
+
+    public boolean isPending() {
+        return paymentStatus == PaymentStatus.PENDING;
+    }
+
     /**
      * 결제 승인
      * - Payment amount는 승인된 금액과 일치해야 한다

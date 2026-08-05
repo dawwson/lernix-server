@@ -63,6 +63,30 @@ class PaymentTest {
     }
 
     @Test
+    @DisplayName("결제의 주문과 요청 주문이 같으면 주문 검증을 통과한다")
+    void validateOrder_matchingOrder_completesNormally() {
+        Payment payment = payment(40_000);
+
+        assertThatCode(() -> payment.validateOrder("order-1"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("결제의 주문과 요청 주문이 다르면 예외가 발생하고 결제 상태를 유지한다")
+    void validateOrder_differentOrder_throwsOrderMismatchAndKeepsState() {
+        Payment payment = payment(40_000);
+
+        assertPaymentError(
+                () -> payment.validateOrder("order-2"),
+                PaymentErrorCode.PAYMENT_ORDER_MISMATCH
+        );
+
+        assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getPaymentKey()).isNull();
+        assertThat(payment.getApprovedAt()).isNull();
+    }
+
+    @Test
     @DisplayName("대기 중인 결제를 승인하면 승인 정보가 저장된다")
     void approve_pendingPayment_approvesPayment() {
         Payment payment = payment(40_000);
