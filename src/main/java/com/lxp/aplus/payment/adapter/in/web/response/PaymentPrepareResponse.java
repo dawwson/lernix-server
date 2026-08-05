@@ -7,11 +7,13 @@ import java.math.BigDecimal;
 
 @Builder
 public record PaymentPrepareResponse(
+        String paymentId,
         String orderId,
         BigDecimal amount
 ) {
     public static PaymentPrepareResponse from(PaymentPrepareResult result) {
         return PaymentPrepareResponse.builder()
+                .paymentId(result.paymentId())
                 .orderId(result.orderId())
                 .amount(result.amount())
                 .build();
