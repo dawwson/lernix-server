@@ -135,6 +135,31 @@ class PaymentServiceUnitTest {
     }
 
     @Test
+    @DisplayName("다른 사용자가 결제를 승인하면 저장하거나 이벤트를 발행하지 않는다")
+    void confirm_differentUser_doesNotSaveOrPublishEvent() {
+        String orderId = "order-1";
+        BigDecimal amount = BigDecimal.valueOf(50_000);
+        Payment payment = Payment.create(orderId, 1L, amount);
+        given(paymentRepository.findByOrderId(orderId)).willReturn(Optional.of(payment));
+
+        assertPaymentError(
+                () -> paymentService.confirm(new PaymentConfirmCommand(
+                        2L,
+                        orderId,
+                        "payment-key",
+                        amount
+                )),
+                PaymentErrorCode.PAYMENT_ACCESS_DENIED
+        );
+
+        assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getPaymentKey()).isNull();
+        assertThat(payment.getApprovedAt()).isNull();
+        then(paymentRepository).should(never()).save(any(Payment.class));
+        then(eventPublisher).should(never()).publish(any(PaymentCompletedEvent.class));
+    }
+
+    @Test
     @DisplayName("승인 금액이 결제 금액과 다르면 저장하거나 이벤트를 발행하지 않는다")
     void confirm_mismatchedAmount_doesNotSaveOrPublishEvent() {
         String orderId = "order-1";
