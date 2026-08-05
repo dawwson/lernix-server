@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 // TODO: amount, currency 묶어서 VO(Money)로 만들기
@@ -105,7 +106,14 @@ public class Payment extends BaseAggregateRoot {
         );
     }
 
-    /* ========= 도메인 행위 ========= */
+    /*
+     * 결제 소유자 검증
+     */
+    public void validateOwner(Long userId) {
+        if (!Objects.equals(this.userId, userId)) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
 
     /**
      * 결제 승인
