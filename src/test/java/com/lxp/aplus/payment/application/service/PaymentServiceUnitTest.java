@@ -44,7 +44,7 @@ class PaymentServiceUnitTest {
         givenNewRequest(command);
         given(orderQueryPort.getPayableOrder("order-1", 1L))
                 .willReturn(new PayableOrder("order-1", 1L, amount()));
-        given(paymentRepository.findByOrderId("order-1")).willReturn(Optional.empty());
+        given(paymentRepository.findByOrderIdForUpdate("order-1")).willReturn(Optional.empty());
 
         var result = service.prepare(command);
 
@@ -65,7 +65,7 @@ class PaymentServiceUnitTest {
         payment.prepareAttempt();
         given(orderQueryPort.getPayableOrder("order-1", 1L))
                 .willReturn(new PayableOrder("order-1", 1L, amount()));
-        given(paymentRepository.findByOrderId("order-1")).willReturn(Optional.of(payment));
+        given(paymentRepository.findByOrderIdForUpdate("order-1")).willReturn(Optional.of(payment));
 
         assertThatThrownBy(() -> service.prepare(command))
                 .isInstanceOf(BusinessException.class)
@@ -85,7 +85,7 @@ class PaymentServiceUnitTest {
         payment.fail(failed);
         given(orderQueryPort.getPayableOrder("order-1", 1L))
                 .willReturn(new PayableOrder("order-1", 1L, amount()));
-        given(paymentRepository.findByOrderId("order-1")).willReturn(Optional.of(payment));
+        given(paymentRepository.findByOrderIdForUpdate("order-1")).willReturn(Optional.of(payment));
 
         var result = service.prepare(command);
 
@@ -103,7 +103,7 @@ class PaymentServiceUnitTest {
         payment.approve(attempt.getId(), "key", amount());
         given(orderQueryPort.getPayableOrder("order-1", 1L))
                 .willReturn(new PayableOrder("order-1", 1L, amount()));
-        given(paymentRepository.findByOrderId("order-1")).willReturn(Optional.of(payment));
+        given(paymentRepository.findByOrderIdForUpdate("order-1")).willReturn(Optional.of(payment));
 
         assertThatThrownBy(() -> service.prepare(command))
                 .isInstanceOf(BusinessException.class)

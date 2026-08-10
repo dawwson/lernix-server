@@ -53,6 +53,6 @@ Order -> Enrollment OrderCompletedEvent
 - 이벤트 listener는 트랜잭션 커밋 이후 실행되므로 후속 처리까지 하나의 원자적 트랜잭션으로 묶이지 않습니다.
 - Enrollment listener는 `@Retryable`로 일부 데이터 접근 장애를 재시도합니다.
 - 메시지 브로커와 Outbox 패턴은 적용하지 않았습니다.
-- 주문당 Payment 하나를 DB UNIQUE 제약으로 보장합니다. 최초 생성 경쟁의 충돌 변환과 기존 Payment에 대한 비관적 락은 후속 작업에서 적용합니다.
+- 주문당 Payment 하나를 DB UNIQUE 제약으로 보장합니다. 최초 생성 경쟁은 `409 Conflict`로 변환하고, 기존 Payment의 결제 시도 생성은 Payment 행의 비관적 락으로 직렬화합니다.
 - 결제 준비 요청의 멱등성 키는 사용자 단위로 관리합니다. 동일 사용자·키·주문 요청은 기존 결과를 반환하고, 같은 키로 다른 주문을 요청하면 `409 Conflict`를 반환합니다.
 - 동일 키 동시 INSERT에서 발생하는 DB UNIQUE 충돌을 기존 결과로 복구하는 기능은 아직 적용하지 않았습니다.

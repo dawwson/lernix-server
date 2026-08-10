@@ -44,7 +44,7 @@ public class PaymentService implements PaymentUseCase {
         PayableOrder order = orderQueryPort.getPayableOrder(command.orderId(), command.userId());
 
         // 2-2. 주문에 대한 결제가 이미 존재하면 재사용, 없으면 새로 생성
-        Payment payment = paymentRepository.findByOrderId(order.orderId())
+        Payment payment = paymentRepository.findByOrderIdForUpdate(order.orderId())
                 .orElseGet(() -> Payment.create(order.orderId(), order.userId(), order.amount()));
 
         // 2-3. 결제 시도 생성

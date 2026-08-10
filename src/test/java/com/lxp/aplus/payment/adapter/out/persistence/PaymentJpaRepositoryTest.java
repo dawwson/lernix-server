@@ -33,11 +33,27 @@ class PaymentJpaRepositoryTest {
         paymentRepository.save(payment);
         flushAndClear();
 
-        Payment savedPayment = paymentRepository.findByOrderId("order-1").orElseThrow();
+        Payment savedPayment = paymentRepository.findById(payment.getId()).orElseThrow();
         PaymentAttempt savedAttempt = savedPayment.getPendingAttempt().orElseThrow();
         assertThat(savedAttempt.getId()).isEqualTo(attempt.getId());
         assertThat(savedPayment.getStatus()).isEqualTo(Payment.Status.UNPAID);
         assertThat(savedAttempt.getStatus()).isEqualTo(PaymentAttempt.Status.PENDING);
+    }
+
+    @Test
+    @DisplayName("주문 ID로 잠금 조회하면 Payment와 PaymentAttempt를 함께 반환한다")
+    void findByOrderIdForUpdate_existingPayment_returnsAggregate() {
+        Payment payment = Payment.create("order-1", 1L, BigDecimal.valueOf(40_000));
+        PaymentAttempt attempt = payment.prepareAttempt();
+        paymentRepository.saveAndFlush(payment);
+        flushAndClear();
+
+        Payment result = paymentRepository.findByOrderIdForUpdate("order-1").orElseThrow();
+
+        assertThat(result.getId()).isEqualTo(payment.getId());
+        assertThat(result.getAttempts())
+                .extracting(PaymentAttempt::getId)
+                .containsExactly(attempt.getId());
     }
 
     @Test
