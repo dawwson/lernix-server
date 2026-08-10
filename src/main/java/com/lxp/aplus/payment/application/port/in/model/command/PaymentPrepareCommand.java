@@ -5,6 +5,7 @@ import lombok.Builder;
 @Builder
 public record PaymentPrepareCommand(
         Long userId,
-        String orderId
+        String orderId,
+        String idempotencyKey
 ) {
 }

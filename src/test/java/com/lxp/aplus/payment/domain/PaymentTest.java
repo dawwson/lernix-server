@@ -1,6 +1,7 @@
 package com.lxp.aplus.payment.domain;
 
 import com.lxp.aplus.common.error.BusinessException;
+import com.lxp.aplus.common.error.code.PaymentErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +36,15 @@ class PaymentTest {
     }
 
     @Test
-    @DisplayName("PENDING 시도가 있으면 기존 시도를 반환한다")
-    void prepareAttempt_pendingAttempt_returnsExistingAttempt() {
+    @DisplayName("PENDING 시도가 있으면 새로운 결제 시도를 거부한다")
+    void prepareAttempt_pendingAttempt_throwsRetryNotAllowed() {
         Payment payment = payment();
-        PaymentAttempt firstAttempt = payment.prepareAttempt();
+        payment.prepareAttempt();
 
-        assertThat(payment.prepareAttempt()).isSameAs(firstAttempt);
+        assertThatThrownBy(payment::prepareAttempt)
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
     }
 
     @Test

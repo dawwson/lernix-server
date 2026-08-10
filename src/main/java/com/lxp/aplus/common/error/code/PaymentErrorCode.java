@@ -17,7 +17,9 @@ public enum PaymentErrorCode implements ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EPM006", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "EPM007", "해당 결제에 대한 접근 권한이 없습니다."),
     PAYMENT_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "EPM008", "이미 처리된 주문은 다시 결제할 수 없습니다."),
-    PAYMENT_ORDER_MISMATCH(HttpStatus.CONFLICT, "EPM009", "결제 정보와 주문 정보가 일치하지 않습니다.");
+    PAYMENT_ORDER_MISMATCH(HttpStatus.CONFLICT, "EPM009", "결제 정보와 주문 정보가 일치하지 않습니다."),
+    PAYMENT_IDEMPOTENCY_KEY_CONFLICT(HttpStatus.CONFLICT, "EPM010", "동일한 멱등성 키로 다른 요청을 처리할 수 없습니다."),
+    PAYMENT_IDEMPOTENCY_REQUEST_IN_PROGRESS(HttpStatus.CONFLICT, "EPM011", "동일한 멱등성 요청이 처리 중입니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -14,9 +14,13 @@ public record PaymentPrepareResult(
         BigDecimal amount
 ) {
     public static PaymentPrepareResult from(Payment payment, PaymentAttempt attempt) {
+        return from(payment, attempt.getId());
+    }
+
+    public static PaymentPrepareResult from(Payment payment, String paymentAttemptId) {
         return PaymentPrepareResult.builder()
                 .paymentId(payment.getId())
-                .paymentAttemptId(attempt.getId())
+                .paymentAttemptId(paymentAttemptId)
                 .orderId(payment.getOrderId())
                 .amount(payment.getAmount())
                 .build();

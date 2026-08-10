@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -58,6 +59,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException e) {
         String message = e.getParameterName() + " 파라미터가 필요합니다.";
         log.warn("Missing Parameter : {}", message);
+        return makeErrorResponse(GlobalErrorCode.MISSING_PARAMETER, message);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException e) {
+        String message = e.getHeaderName() + " 헤더가 필요합니다.";
+        log.warn("Missing Header : {}", message);
         return makeErrorResponse(GlobalErrorCode.MISSING_PARAMETER, message);
     }
 

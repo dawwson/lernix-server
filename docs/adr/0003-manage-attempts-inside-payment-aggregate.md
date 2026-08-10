@@ -58,9 +58,19 @@ PENDING → APPROVED
 
 - 요청 멱등성은 Payment나 PaymentAttempt 컬럼에 결합하지 않고 별도 `IdempotencyRecord`로 관리합니다.
 - 키 범위는 사용자 단위이며 `(user_id, idempotency_key)`를 기본 키로 사용합니다.
+- 서로 다른 사용자의 요청은 독립적이므로 같은 문자열 키를 사용하더라도 충돌시키지 않습니다. 복합 키는 동일 사용자의 중복 요청만 차단하고 다른 사용자의 동일 키 사용은 허용합니다.
 - 최소 필드는 `user_id`, `idempotency_key`, `request_hash`, `status`, `resource_id`, `created_at`입니다.
 - `resource_id`에는 최초 응답을 재현할 `PaymentAttempt.id`를 저장합니다.
 - Redis는 실제 DB 병목이나 트래픽 요구가 확인될 때 검토하며, 현재는 DB 저장소를 사용합니다.
+
+`IdempotencyRecord.status`는 결제 승인 상태가 아니라 prepare 요청의 처리 상태를 나타냅니다.
+
+| 상태 | 의미 |
+| --- | --- |
+| `PROCESSING` | 요청은 접수됐지만 반환할 결과가 아직 확정되지 않은 상태 |
+| `COMPLETED` | 요청 결과가 확정되어 `resource_id`로 최초 응답을 복원할 수 있는 상태 |
+
+따라서 `IdempotencyRecord.COMPLETED`, `PaymentAttempt.APPROVED`, `Payment.PAID`는 서로 다른 완료를 의미합니다. 멱등성 레코드가 `COMPLETED`여도 결제가 승인된 것은 아니며, prepare 요청에서 반환할 PaymentAttempt가 확정되었다는 의미입니다.
 
 현재 변경에서는 DB UNIQUE 충돌을 종류별 `409 Conflict`로 변환하는 데까지 구현합니다. 동일 키 동시 요청에서 패배한 트랜잭션이 rollback된 뒤 기존 결과를 재조회해 성공 응답으로 복구하는 기능은 후속 변경으로 분리합니다.
 

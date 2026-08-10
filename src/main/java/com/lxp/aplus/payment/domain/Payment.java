@@ -71,10 +71,7 @@ public class Payment extends BaseAggregateRoot {
 
     public PaymentAttempt prepareAttempt() {
         validateUnpaid();
-        Optional<PaymentAttempt> pendingAttempt = getPendingAttempt();
-        if (pendingAttempt.isPresent()) {
-            return pendingAttempt.get();
-        }
+        validateNoPendingAttempt();
 
         PaymentAttempt attempt = PaymentAttempt.create(this);
         this.attempts.add(attempt);
@@ -136,6 +133,12 @@ public class Payment extends BaseAggregateRoot {
     private void validatePaid() {
         if (status != Status.PAID) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_NOT_APPROVED);
+        }
+    }
+
+    private void validateNoPendingAttempt() {
+        if (getPendingAttempt().isPresent()) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
         }
     }
 

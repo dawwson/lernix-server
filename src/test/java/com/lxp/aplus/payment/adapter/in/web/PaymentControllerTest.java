@@ -69,6 +69,7 @@ class PaymentControllerTest {
                 ));
 
         mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", "idempotency-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"orderId\":\"order-1\"}"))
                 .andExpect(status().isCreated())
@@ -80,15 +81,40 @@ class PaymentControllerTest {
 
         ArgumentCaptor<PaymentPrepareCommand> captor = ArgumentCaptor.forClass(PaymentPrepareCommand.class);
         then(paymentUseCase).should().prepare(captor.capture());
-        assertThat(captor.getValue()).isEqualTo(new PaymentPrepareCommand(USER_ID, "order-1"));
+        assertThat(captor.getValue()).isEqualTo(
+                new PaymentPrepareCommand(USER_ID, "order-1", "idempotency-key"));
     }
 
     @Test
     @DisplayName("주문 ID가 없으면 결제를 준비하지 않는다")
     void preparePayment_missingOrderId_returnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", "idempotency-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));
+    }
+
+    @Test
+    @DisplayName("Idempotency-Key 헤더가 없으면 결제를 준비하지 않는다")
+    void preparePayment_missingIdempotencyKey_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/payments/prepare")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":\"order-1\"}"))
+                .andExpect(status().isBadRequest());
+
+        then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));
+    }
+
+    @Test
+    @DisplayName("Idempotency-Key 헤더가 비어 있으면 결제를 준비하지 않는다")
+    void preparePayment_blankIdempotencyKey_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", " ")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":\"order-1\"}"))
                 .andExpect(status().isBadRequest());
 
         then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));

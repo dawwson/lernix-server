@@ -8,7 +8,7 @@
 
 1. 사용자가 구매할 강좌를 선택합니다.
 2. `POST /api/orders`로 주문을 생성합니다.
-3. 생성된 `orderId`로 `POST /api/payments/prepare`를 호출하고 주문별 결제를 식별하는 `paymentId`와 이번 승인 시도를 식별하는 `paymentAttemptId`를 받습니다.
+3. 생성된 `orderId`와 사용자 단위 `Idempotency-Key`로 `POST /api/payments/prepare`를 호출하고 주문별 결제를 식별하는 `paymentId`와 이번 승인 시도를 식별하는 `paymentAttemptId`를 받습니다.
 4. PG 승인 후 `paymentId`, `paymentAttemptId`, `orderId`로 `POST /api/payments/confirm`을 호출합니다.
 5. `PaymentCompletedEvent`가 발행되고 Order가 주문을 완료합니다.
 6. `OrderCompletedEvent`가 발행되고 Enrollment가 수강권을 생성합니다.
@@ -22,7 +22,7 @@ sequenceDiagram
 
     Client->>Order: POST /api/orders
     Order-->>Client: orderId, amount
-    Client->>Payment: POST /api/payments/prepare(orderId)
+    Client->>Payment: POST /api/payments/prepare(orderId, Idempotency-Key)
     Payment-->>Client: paymentId, paymentAttemptId, orderId, amount
     Client->>Payment: POST /api/payments/confirm(paymentId, paymentAttemptId, orderId)
     Payment-->>Order: PaymentCompletedEvent
@@ -54,3 +54,5 @@ Order -> Enrollment OrderCompletedEvent
 - Enrollment listener는 `@Retryable`로 일부 데이터 접근 장애를 재시도합니다.
 - 메시지 브로커와 Outbox 패턴은 적용하지 않았습니다.
 - 주문당 Payment 하나를 DB UNIQUE 제약으로 보장합니다. 최초 생성 경쟁의 충돌 변환과 기존 Payment에 대한 비관적 락은 후속 작업에서 적용합니다.
+- 결제 준비 요청의 멱등성 키는 사용자 단위로 관리합니다. 동일 사용자·키·주문 요청은 기존 결과를 반환하고, 같은 키로 다른 주문을 요청하면 `409 Conflict`를 반환합니다.
+- 동일 키 동시 INSERT에서 발생하는 DB UNIQUE 충돌을 기존 결과로 복구하는 기능은 아직 적용하지 않았습니다.

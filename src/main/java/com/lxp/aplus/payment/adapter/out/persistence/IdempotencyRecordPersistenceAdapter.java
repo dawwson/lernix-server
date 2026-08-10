@@ -15,7 +15,7 @@ public class IdempotencyRecordPersistenceAdapter implements IdempotencyRecordSto
 
     @Override
     public IdempotencyRecord save(IdempotencyRecord record) {
-        return jpaRepository.save(record);
+        return jpaRepository.saveAndFlush(record);
     }
 
     @Override

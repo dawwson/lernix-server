@@ -1,5 +1,7 @@
 package com.lxp.aplus.payment.domain;
 
+import com.lxp.aplus.common.error.BusinessException;
+import com.lxp.aplus.common.error.code.PaymentErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "idempotency_records")
@@ -51,6 +54,21 @@ public class IdempotencyRecord {
     public void complete(String resourceId) {
         this.status = Status.COMPLETED;
         this.resourceId = resourceId;
+    }
+
+    public void validateRequestHash(String requestHash) {
+        // 동일 사용자·키를 다른 주문 요청에 재사용하는 것은 허용하지 않는다.
+        if (!Objects.equals(this.requestHash, requestHash)) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_IDEMPOTENCY_KEY_CONFLICT);
+        }
+    }
+
+    public String completedResourceId() {
+        // PROCESSING 상태에는 아직 재현할 수 있는 최초 응답이 없다.
+        if (status != Status.COMPLETED) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_IDEMPOTENCY_REQUEST_IN_PROGRESS);
+        }
+        return resourceId;
     }
 
     public Long getUserId() {
