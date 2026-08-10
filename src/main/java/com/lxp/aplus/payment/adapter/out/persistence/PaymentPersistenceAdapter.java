@@ -23,7 +23,7 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
             return jpaRepository.saveAndFlush(payment);
         } catch (DataIntegrityViolationException exception) {
             // TODO: DB 제약 위반은 Payment 전용 예외로 변환하고, BusinessException 매핑은 application service로 이동한다.
-            if (hasConstraint(exception, "uk_payments_order_id")) {
+            if (hasOrderIdUniqueConstraint(exception)) {
                 throw new BusinessException(PaymentErrorCode.PAYMENT_PREPARE_CONFLICT);
             }
             throw exception;
@@ -45,11 +45,11 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
         return jpaRepository.findByAttemptId(attemptId);
     }
 
-    private boolean hasConstraint(Throwable exception, String constraintName) {
+    private boolean hasOrderIdUniqueConstraint(Throwable exception) {
         Throwable cause = exception;
         while (cause != null) {
             if (cause instanceof org.hibernate.exception.ConstraintViolationException constraintViolation
-                    && constraintName.equalsIgnoreCase(constraintViolation.getConstraintName())) {
+                    && "uk_payments_order_id".equalsIgnoreCase(constraintViolation.getConstraintName())) {
                 return true;
             }
             cause = cause.getCause();
