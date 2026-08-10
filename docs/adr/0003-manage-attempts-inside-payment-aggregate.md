@@ -25,10 +25,10 @@
 - 애플리케이션 계층은 `PaymentAttemptRepositoryPort`를 두지 않고 `PaymentRepositoryPort`로 root만 저장·조회합니다. Attempt는 Payment의 cascade로 함께 영속화합니다.
 - Payment root는 첫 결제 준비 요청에서 lazy 생성합니다.
 - 최초 root 생성 경쟁은 `order_id` UNIQUE 제약으로 차단합니다.
-- root가 생성된 이후에는 Payment 행의 비관적 락으로 동일 주문의 시도 생성과 승인을 직렬화합니다.
+- root가 생성된 이후에는 Payment 행의 비관적 락으로 동일 주문의 시도 생성을 직렬화합니다.
 - Order BC에는 주문 존재, 소유자, 결제 가능 상태와 금액만 일반 조회로 요청하며 Order 저장소의 락에는 의존하지 않습니다.
 
-Payment의 상태 확인과 Attempt 생성은 짧은 DB 트랜잭션이며, 충돌 가능성은 낮아도 중복 결제 시도의 영향이 크므로 충돌 후 rollback하는 낙관적 락보다 요청을 먼저 직렬화하는 비관적 락을 선택합니다. 외부 PG 호출을 기다리는 동안에는 Payment 행과 DB connection을 점유하지 않도록 비관적 락을 유지하지 않습니다.
+Payment의 상태 확인과 Attempt 생성은 짧은 DB 트랜잭션이며, 충돌 가능성은 낮아도 중복 결제 시도의 영향이 크므로 충돌 후 rollback하는 낙관적 락보다 요청을 먼저 직렬화하는 비관적 락을 선택합니다. 이 잠금은 prepare 트랜잭션에만 적용하며 외부 PG 호출을 기다리는 동안에는 Payment 행과 DB connection을 점유하지 않습니다.
 
 ### 상태와 식별자
 
