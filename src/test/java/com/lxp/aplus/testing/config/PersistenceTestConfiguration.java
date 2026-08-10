@@ -6,6 +6,7 @@ import com.lxp.aplus.order.adapter.out.persistence.OrderJpaRepository;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.payment.adapter.out.persistence.PaymentJpaRepository;
 import com.lxp.aplus.payment.domain.Payment;
+import com.lxp.aplus.payment.domain.PaymentAttempt;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -22,7 +23,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * 각 테스트가 해당 도메인의 매핑, cascade, 조회 및 DB 제약 조건에만 집중하도록 합니다.
  */
 @TestConfiguration(proxyBeanMethods = false)
-@EntityScan(basePackageClasses = {Cart.class, Order.class, Payment.class})
+@EntityScan(basePackageClasses = {Cart.class, Order.class, Payment.class, PaymentAttempt.class})
 @EnableJpaRepositories(basePackageClasses = {
         CartJpaRepository.class,
         OrderJpaRepository.class,

@@ -12,12 +12,11 @@ import com.lxp.aplus.payment.application.port.out.order.PaymentOrderQueryPort;
 import com.lxp.aplus.payment.application.port.out.order.model.PayableOrder;
 import com.lxp.aplus.payment.application.port.out.repository.PaymentRepositoryPort;
 import com.lxp.aplus.payment.domain.Payment;
+import com.lxp.aplus.payment.domain.PaymentAttempt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -31,45 +30,25 @@ public class PaymentService implements PaymentUseCase {
 
     @Override
     public PaymentPrepareResult prepare(PaymentPrepareCommand command) {
-
-        // 1. 결제 대상 주문 조회
+        // 1. 주문 조회
         PayableOrder order = orderQueryPort.getPayableOrder(command.orderId(), command.userId());
 
-        // 2. 이전 결제 시도에 따른 재시도 가능 여부 확인
-        List<Payment> previousPayments = paymentRepository.findAllByOrderId(order.orderId());
+        // 2. 주문에 대한 결제 정보 조회 및 생성
+        Payment payment = paymentRepository.findByOrderId(order.orderId())
+                .orElseGet(() -> Payment.create(order.orderId(), order.userId(), order.amount()));
 
-        boolean hasPaymentBlockingNewAttempt = previousPayments.stream()
-                .anyMatch(Payment::blocksNewAttempt);
-        if (hasPaymentBlockingNewAttempt) {
-            throw new BusinessException(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
-        }
-
-        Payment pendingPayment = previousPayments.stream()
-                .filter(Payment::isPending)
-                .findFirst()
-                .orElse(null);
-        if (pendingPayment != null) {
-            return PaymentPrepareResult.from(pendingPayment);
-        }
-
-        // 3. Payment 생성
-        Payment payment = Payment.create(
-                order.orderId(),
-                order.userId(),
-                order.amount()
-        );
+        // 3. 진행 중인 시도를 반환하거나 새로운 시도 생성
+        PaymentAttempt attempt = payment.prepareAttempt();
         paymentRepository.save(payment);
 
-        // 4. 결과 반환
-        return PaymentPrepareResult.from(payment);
+        return PaymentPrepareResult.from(payment, attempt);
     }
 
     @Override
     public void confirm(PaymentConfirmCommand command) {
-        // 1. Payment 조회
-        Payment payment = paymentRepository.findById(command.paymentId())
+        // FIXME: API 분리 전까지 paymentId는 PaymentAttempt의 식별자를 의미한다.
+        Payment payment = paymentRepository.findByAttemptId(command.paymentId())
                 .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
-
         // 2. 결제 소유자 검증
         payment.validateOwner(command.userId());
 
@@ -80,14 +59,14 @@ public class PaymentService implements PaymentUseCase {
         // TODO: 추후 구현. 성공했다고 가정함
 
         // 5. 도메인 불변성 검증 -> 상태 변경
-        payment.approve(command.paymentKey(), command.amount());
+        payment.approve(command.paymentId(), command.paymentKey(), command.amount());
 
         // 6. Payment 저장
         paymentRepository.save(payment);
 
         eventPublisher.publish(
                 new PaymentCompletedEvent(
-                    payment.getPaymentId(),
+                    command.paymentId(),
                     payment.getOrderId(),
                     payment.getUserId(),
                     payment.getAmount()

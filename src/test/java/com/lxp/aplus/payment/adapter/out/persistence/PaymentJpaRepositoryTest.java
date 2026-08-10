@@ -1,7 +1,7 @@
 package com.lxp.aplus.payment.adapter.out.persistence;
 
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentStatus;
+import com.lxp.aplus.payment.domain.PaymentAttempt;
 import com.lxp.aplus.testing.config.PersistenceTestConfiguration;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -22,98 +22,46 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ContextConfiguration(classes = PersistenceTestConfiguration.class)
 @DisplayName("PaymentJpaRepository 테스트")
 class PaymentJpaRepositoryTest {
-
-    @Autowired
-    private PaymentJpaRepository repository;
-
-    @Autowired
-    private EntityManager entityManager;
+    @Autowired PaymentJpaRepository paymentRepository;
+    @Autowired EntityManager entityManager;
 
     @Test
-    @DisplayName("결제를 저장하면 결제 ID로 조회할 수 있다")
-    void save_payment_findsByPaymentId() {
-        Payment payment = Payment.create(
-                "order-1",
-                1L,
-                BigDecimal.valueOf(40_000)
-        );
-
-        repository.save(payment);
+    @DisplayName("Payment를 저장하면 현재 PaymentAttempt도 함께 저장된다")
+    void save_paymentWithAttempt_cascadesAttempt() {
+        Payment payment = Payment.create("order-1", 1L, BigDecimal.valueOf(40_000));
+        PaymentAttempt attempt = payment.prepareAttempt();
+        paymentRepository.save(payment);
         flushAndClear();
 
-        Payment result = repository.findById(payment.getPaymentId()).orElseThrow();
-        assertThat(result.getPaymentId()).isEqualTo(payment.getPaymentId());
-        assertThat(result.getUserId()).isEqualTo(1L);
-        assertThat(result.getAmount()).isEqualByComparingTo("40000");
-        assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        Payment savedPayment = paymentRepository.findByOrderId("order-1").orElseThrow();
+        PaymentAttempt savedAttempt = savedPayment.getPendingAttempt().orElseThrow();
+        assertThat(savedAttempt.getId()).isEqualTo(attempt.getId());
+        assertThat(savedPayment.getStatus()).isEqualTo(Payment.Status.UNPAID);
+        assertThat(savedAttempt.getStatus()).isEqualTo(PaymentAttempt.Status.PENDING);
     }
 
     @Test
-    @DisplayName("결제를 승인하면 상태와 결제 키가 DB에 저장된다")
-    void approve_persistedPayment_updatesPaymentState() {
-        BigDecimal amount = BigDecimal.valueOf(40_000);
-        Payment payment = Payment.create("order-1", 1L, amount);
-        repository.save(payment);
-        flushAndClear();
-
-        Payment savedPayment = repository.findById(payment.getPaymentId()).orElseThrow();
-        savedPayment.approve("payment-key", amount);
-        flushAndClear();
-
-        Payment result = repository.findById(payment.getPaymentId()).orElseThrow();
-        assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.APPROVED);
-        assertThat(result.getPaymentKey()).isEqualTo("payment-key");
-        assertThat(result.getApprovedAt()).isNotNull();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 결제 ID로 조회하면 빈 결과를 반환한다")
-    void findById_missingPayment_returnsEmpty() {
-        assertThat(repository.findById("missing-payment")).isEmpty();
-    }
-
-    @Test
-    @DisplayName("동일 주문의 실패한 결제 시도를 모두 저장하고 조회할 수 있다")
-    void findAllByOrderId_failedPayments_returnsAllAttempts() {
-        BigDecimal amount = BigDecimal.valueOf(40_000);
-        Payment firstPayment = Payment.create("order-1", 1L, amount);
-        Payment secondPayment = Payment.create("order-1", 1L, amount);
-        firstPayment.fail();
-        secondPayment.fail();
-        repository.saveAllAndFlush(java.util.List.of(firstPayment, secondPayment));
-        entityManager.clear();
-
-        assertThat(repository.findAllByOrderId("order-1"))
-                .extracting(Payment::getPaymentId, Payment::getPaymentStatus)
-                .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple(
-                                firstPayment.getPaymentId(),
-                                PaymentStatus.FAILED
-                        ),
-                        org.assertj.core.groups.Tuple.tuple(
-                                secondPayment.getPaymentId(),
-                                PaymentStatus.FAILED
-                        )
-                );
-    }
-
-    @Test
-    @DisplayName("같은 결제 키를 저장하면 DB 제약 조건 위반이 발생한다")
-    void save_duplicatePaymentKey_throwsDataIntegrityViolation() {
-        BigDecimal amount = BigDecimal.valueOf(40_000);
-        Payment firstPayment = Payment.create("order-1", 1L, amount);
-        firstPayment.approve("duplicated-key", amount);
-        repository.saveAndFlush(firstPayment);
-
-        Payment secondPayment = Payment.create("order-2", 1L, amount);
-        secondPayment.approve("duplicated-key", amount);
-
-        assertThatThrownBy(() -> repository.saveAndFlush(secondPayment))
+    @DisplayName("동일 주문에는 Payment를 하나만 저장할 수 있다")
+    void save_duplicateOrderId_throwsDataIntegrityViolation() {
+        paymentRepository.saveAndFlush(Payment.create("order-1", 1L, BigDecimal.TEN));
+        assertThatThrownBy(() -> paymentRepository.saveAndFlush(Payment.create("order-1", 1L, BigDecimal.TEN)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    private void flushAndClear() {
-        entityManager.flush();
-        entityManager.clear();
+    @Test
+    @DisplayName("paymentKey는 모든 PaymentAttempt에서 유일해야 한다")
+    void save_duplicatePaymentKey_throwsDataIntegrityViolation() {
+        Payment first = Payment.create("order-1", 1L, BigDecimal.TEN);
+        PaymentAttempt firstAttempt = first.prepareAttempt();
+        first.approve(firstAttempt.getId(), "duplicated-key", BigDecimal.TEN);
+        paymentRepository.saveAndFlush(first);
+
+        Payment second = Payment.create("order-2", 1L, BigDecimal.TEN);
+        PaymentAttempt secondAttempt = second.prepareAttempt();
+        second.approve(secondAttempt.getId(), "duplicated-key", BigDecimal.TEN);
+        assertThatThrownBy(() -> paymentRepository.saveAndFlush(second))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    private void flushAndClear() { entityManager.flush(); entityManager.clear(); }
 }

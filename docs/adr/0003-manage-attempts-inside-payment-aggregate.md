@@ -22,6 +22,7 @@
 
 - `Payment`는 주문별 결제 프로세스를 나타내며 `order_id`에 UNIQUE 제약을 둡니다.
 - 실제 PG 결제 시도 한 번은 `PaymentAttempt`로 분리하고 `Payment` Aggregate 내부에서 생성·변경합니다.
+- 애플리케이션 계층은 `PaymentAttemptRepositoryPort`를 두지 않고 `PaymentRepositoryPort`로 root만 저장·조회합니다. Attempt는 Payment의 cascade로 함께 영속화합니다.
 - Payment root는 첫 결제 준비 요청에서 lazy 생성합니다.
 - 최초 root 생성 경쟁은 `order_id` UNIQUE 제약으로 차단합니다.
 - root가 생성된 이후에는 Payment 행의 비관적 락으로 동일 주문의 시도 생성과 승인을 직렬화합니다.
@@ -47,6 +48,7 @@ PENDING → APPROVED
 
 - 실패한 Attempt가 있어도 Payment는 `UNPAID`를 유지해 새 시도를 허용합니다.
 - `PENDING` Attempt가 있으면 새 시도를 거부합니다.
+- 현재 시도를 가리키는 별도 식별자는 두지 않으며, 유일한 `PENDING` Attempt를 현재 진행 중인 시도로 봅니다.
 - Attempt가 승인되면 같은 트랜잭션에서 Payment를 `PAID`로 변경합니다.
 - 취소와 환불은 승인 시도의 결과를 뒤집지 않으므로 Payment 상태로만 관리합니다.
 - 도메인 내부 식별자는 `Payment.id`, `PaymentAttempt.id`로 둡니다.
