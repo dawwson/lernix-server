@@ -12,6 +12,9 @@ public record PaymentConfirmRequest(
         @NotBlank(message = "paymentId는 필수입니다.")
         String paymentId,
 
+        @NotBlank(message = "paymentAttemptId는 필수입니다.")
+        String paymentAttemptId,
+
         @NotBlank(message = "orderId는 필수입니다.")
         String orderId,
 
@@ -26,6 +29,7 @@ public record PaymentConfirmRequest(
         return PaymentConfirmCommand.builder()
                 .userId(userId)
                 .paymentId(paymentId)
+                .paymentAttemptId(paymentAttemptId)
                 .orderId(orderId)
                 .amount(amount)
                 .paymentKey(paymentKey)

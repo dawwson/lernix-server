@@ -77,13 +77,14 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_committedTransaction_completesOrderAndPublishesEnrollmentCommand() {
         paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
+                payment.getId(),
                 attempt.getId(),
                 order.getOrderId(),
                 "payment-key",
                 AMOUNT
         ));
 
-        Payment approvedPayment = paymentRepository.findByAttemptId(attempt.getId()).orElseThrow();
+        Payment approvedPayment = paymentRepository.findById(payment.getId()).orElseThrow();
         PaymentAttempt approvedAttempt = approvedPayment.getAttempts().stream()
                 .filter(candidate -> candidate.getId().equals(attempt.getId()))
                 .findFirst()
@@ -93,7 +94,7 @@ class PurchaseCompletionEventIntegrationTest {
         assertThat(approvedPayment.getStatus()).isEqualTo(Payment.Status.PAID);
         assertThat(approvedAttempt.getPaymentKey()).isEqualTo("payment-key");
         assertThat(completedOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
-        assertThat(completedOrder.getApprovedPaymentId()).isEqualTo(attempt.getId());
+        assertThat(completedOrder.getApprovedPaymentId()).isEqualTo(payment.getId());
         verify(enrollmentCommandUseCase, timeout(3_000)).enroll(
                 new EnrollmentCommand(USER_ID, COURSE_ID, orderItemId)
         );
@@ -104,6 +105,7 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_mismatchedAmount_keepsOrderPending() {
         assertThatThrownBy(() -> paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
+                payment.getId(),
                 attempt.getId(),
                 order.getOrderId(),
                 "payment-key",
@@ -113,7 +115,7 @@ class PurchaseCompletionEventIntegrationTest {
                 .extracting("errorCode")
                 .isEqualTo(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
 
-        Payment pendingPayment = paymentRepository.findByAttemptId(attempt.getId()).orElseThrow();
+        Payment pendingPayment = paymentRepository.findById(payment.getId()).orElseThrow();
         PaymentAttempt pendingAttempt = pendingPayment.getAttempts().stream()
                 .filter(candidate -> candidate.getId().equals(attempt.getId()))
                 .findFirst()

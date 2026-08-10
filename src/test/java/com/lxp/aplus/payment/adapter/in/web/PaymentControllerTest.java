@@ -63,6 +63,7 @@ class PaymentControllerTest {
         given(paymentUseCase.prepare(any(PaymentPrepareCommand.class)))
                 .willReturn(new PaymentPrepareResult(
                         "payment-1",
+                        "attempt-1",
                         "order-1",
                         BigDecimal.valueOf(40_000)
                 ));
@@ -73,6 +74,7 @@ class PaymentControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value("SPM001"))
                 .andExpect(jsonPath("$.data.paymentId").value("payment-1"))
+                .andExpect(jsonPath("$.data.paymentAttemptId").value("attempt-1"))
                 .andExpect(jsonPath("$.data.orderId").value("order-1"))
                 .andExpect(jsonPath("$.data.amount").value(40_000));
 
@@ -100,6 +102,7 @@ class PaymentControllerTest {
                         .content("""
                                 {
                                   "paymentId": "payment-1",
+                                  "paymentAttemptId": "attempt-1",
                                   "orderId": "order-1",
                                   "amount": 40000,
                                   "paymentKey": "payment-key"
@@ -114,6 +117,7 @@ class PaymentControllerTest {
                 new PaymentConfirmCommand(
                         USER_ID,
                         "payment-1",
+                        "attempt-1",
                         "order-1",
                         "payment-key",
                         BigDecimal.valueOf(40_000)
@@ -123,10 +127,11 @@ class PaymentControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "{\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"amount\":40000}"
+            "{\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"amount\":40000}"
     })
     @DisplayName("필수 승인 정보가 없으면 결제를 승인하지 않는다")
     void confirmPayment_missingRequiredField_returnsBadRequest(String requestBody) throws Exception {

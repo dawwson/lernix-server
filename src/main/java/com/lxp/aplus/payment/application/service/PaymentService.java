@@ -46,8 +46,7 @@ public class PaymentService implements PaymentUseCase {
 
     @Override
     public void confirm(PaymentConfirmCommand command) {
-        // FIXME: API 분리 전까지 paymentId는 PaymentAttempt의 식별자를 의미한다.
-        Payment payment = paymentRepository.findByAttemptId(command.paymentId())
+        Payment payment = paymentRepository.findById(command.paymentId())
                 .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
         // 2. 결제 소유자 검증
         payment.validateOwner(command.userId());
@@ -59,14 +58,14 @@ public class PaymentService implements PaymentUseCase {
         // TODO: 추후 구현. 성공했다고 가정함
 
         // 5. 도메인 불변성 검증 -> 상태 변경
-        payment.approve(command.paymentId(), command.paymentKey(), command.amount());
+        payment.approve(command.paymentAttemptId(), command.paymentKey(), command.amount());
 
         // 6. Payment 저장
         paymentRepository.save(payment);
 
         eventPublisher.publish(
                 new PaymentCompletedEvent(
-                    command.paymentId(),
+                    payment.getId(),
                     payment.getOrderId(),
                     payment.getUserId(),
                     payment.getAmount()

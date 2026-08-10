@@ -47,7 +47,8 @@ class PaymentServiceUnitTest {
         then(paymentRepository).should().save(payment.capture());
         assertThat(payment.getValue().getPendingAttempt())
                 .get().extracting(PaymentAttempt::getId)
-                .isEqualTo(result.paymentId());
+                .isEqualTo(result.paymentAttemptId());
+        assertThat(result.paymentId()).isEqualTo(payment.getValue().getId());
     }
 
     @Test
@@ -61,7 +62,8 @@ class PaymentServiceUnitTest {
 
         var result = service.prepare(new PaymentPrepareCommand(1L, "order-1"));
 
-        assertThat(result.paymentId()).isEqualTo(attempt.getId());
+        assertThat(result.paymentId()).isEqualTo(payment.getId());
+        assertThat(result.paymentAttemptId()).isEqualTo(attempt.getId());
         then(paymentRepository).should().save(payment);
     }
 
@@ -77,7 +79,8 @@ class PaymentServiceUnitTest {
 
         var result = service.prepare(new PaymentPrepareCommand(1L, "order-1"));
 
-        assertThat(result.paymentId()).isNotEqualTo(failed.getId());
+        assertThat(result.paymentId()).isEqualTo(payment.getId());
+        assertThat(result.paymentAttemptId()).isNotEqualTo(failed.getId());
     }
 
     @Test
@@ -100,14 +103,15 @@ class PaymentServiceUnitTest {
     void confirm_pendingAttempt_completesPaymentAndPublishesEvent() {
         Payment payment = Payment.create("order-1", 1L, amount());
         PaymentAttempt attempt = payment.prepareAttempt();
-        given(paymentRepository.findByAttemptId(attempt.getId())).willReturn(Optional.of(payment));
+        given(paymentRepository.findById(payment.getId())).willReturn(Optional.of(payment));
 
-        service.confirm(new PaymentConfirmCommand(1L, attempt.getId(), "order-1", "key", amount()));
+        service.confirm(new PaymentConfirmCommand(
+                1L, payment.getId(), attempt.getId(), "order-1", "key", amount()));
 
         assertThat(payment.getStatus()).isEqualTo(Payment.Status.PAID);
         assertThat(attempt.getStatus()).isEqualTo(PaymentAttempt.Status.APPROVED);
         then(paymentRepository).should().save(payment);
-        then(eventPublisher).should().publish(org.mockito.ArgumentMatchers.argThat(e -> e.paymentId().equals(attempt.getId())));
+        then(eventPublisher).should().publish(org.mockito.ArgumentMatchers.argThat(e -> e.paymentId().equals(payment.getId())));
     }
 
     private BigDecimal amount() { return BigDecimal.valueOf(40_000); }

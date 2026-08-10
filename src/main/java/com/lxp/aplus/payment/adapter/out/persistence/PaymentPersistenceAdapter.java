@@ -28,8 +28,4 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
         return jpaRepository.findByOrderId(orderId);
     }
 
-    @Override
-    public Optional<Payment> findByAttemptId(String attemptId) {
-        return jpaRepository.findByAttemptId(attemptId);
-    }
 }

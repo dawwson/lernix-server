@@ -9,12 +9,14 @@ import java.math.BigDecimal;
 @Builder
 public record PaymentPrepareResult(
         String paymentId,
+        String paymentAttemptId,
         String orderId,
         BigDecimal amount
 ) {
     public static PaymentPrepareResult from(Payment payment, PaymentAttempt attempt) {
         return PaymentPrepareResult.builder()
-                .paymentId(attempt.getId())
+                .paymentId(payment.getId())
+                .paymentAttemptId(attempt.getId())
                 .orderId(payment.getOrderId())
                 .amount(payment.getAmount())
                 .build();
