@@ -5,6 +5,7 @@ import com.lxp.aplus.payment.domain.Payment;
 import com.lxp.aplus.common.error.BusinessException;
 import com.lxp.aplus.common.error.code.PaymentErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
@@ -37,7 +38,18 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
 
     @Override
     public Optional<Payment> findByOrderIdForUpdate(String orderId) {
-        return jpaRepository.findByOrderIdForUpdate(orderId);
+        Optional<Payment> result = jpaRepository.findByOrderIdForUpdate(orderId);
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Payment payment = result.get();
+
+        // NOTE: Payment root의 잠금을 획득한 뒤 Attempt를 조회해야
+        //  잠금 대기 중 다른 트랜잭션이 추가한 최신 Attempt까지 확인할 수 있다.
+        Hibernate.initialize(payment.getAttempts());
+
+        return Optional.of(payment);
     }
 
     @Override
@@ -49,8 +61,10 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
         Throwable cause = exception;
         while (cause != null) {
             if (cause instanceof org.hibernate.exception.ConstraintViolationException constraintViolation
-                    && "uk_payments_order_id".equalsIgnoreCase(constraintViolation.getConstraintName())) {
-                return true;
+                    && constraintViolation.getConstraintName() != null) {
+                return constraintViolation.getConstraintName()
+                        .toLowerCase()
+                        .contains("uk_payments_order_id");
             }
             cause = cause.getCause();
         }

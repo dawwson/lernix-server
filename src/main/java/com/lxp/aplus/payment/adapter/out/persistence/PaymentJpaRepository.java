@@ -17,7 +17,6 @@ public interface PaymentJpaRepository extends JpaRepository<Payment, String>  {
     Optional<Payment> findById(String id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @EntityGraph(attributePaths = "attempts")
     @Query("select p from Payment p where p.orderId = :orderId")
     Optional<Payment> findByOrderIdForUpdate(@Param("orderId") String orderId);
 
