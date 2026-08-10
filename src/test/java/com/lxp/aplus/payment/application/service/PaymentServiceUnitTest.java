@@ -110,6 +110,28 @@ class PaymentServiceUnitTest {
     }
 
     @Test
+    @DisplayName("실패 이력과 대기 중인 결제가 함께 있으면 대기 중인 결제를 반환한다")
+    void prepare_failedAndPendingPayments_returnsPendingPayment() {
+        String orderId = "order-1";
+        Long userId = 1L;
+        BigDecimal amount = BigDecimal.valueOf(50_000);
+        Payment failedPayment = Payment.create(orderId, userId, amount);
+        failedPayment.fail();
+        Payment pendingPayment = Payment.create(orderId, userId, amount);
+        given(orderQueryPort.getPayableOrder(orderId, userId))
+                .willReturn(new PayableOrder(orderId, userId, amount));
+        given(paymentRepository.findAllByOrderId(orderId))
+                .willReturn(List.of(failedPayment, pendingPayment));
+
+        PaymentPrepareResult result = paymentService.prepare(
+                new PaymentPrepareCommand(userId, orderId)
+        );
+
+        assertThat(result).isEqualTo(PaymentPrepareResult.from(pendingPayment));
+        then(paymentRepository).should(never()).save(any(Payment.class));
+    }
+
+    @Test
     @DisplayName("실패한 결제만 있으면 새로운 결제를 생성한다")
     void prepare_failedPayments_savesNewPayment() {
         String orderId = "order-1";
@@ -157,6 +179,29 @@ class PaymentServiceUnitTest {
         then(paymentRepository).should(never()).save(any(Payment.class));
     }
 
+    @ParameterizedTest
+    @EnumSource(value = PaymentStatus.class, names = {"APPROVED", "CANCELED", "REFUNDED"})
+    @DisplayName("실패 이력과 처리 완료된 결제가 함께 있으면 재결제를 거부한다")
+    void prepare_failedAndCompletedPayments_throwsRetryNotAllowed(PaymentStatus status) {
+        String orderId = "order-1";
+        Long userId = 1L;
+        BigDecimal amount = BigDecimal.valueOf(50_000);
+        Payment failedPayment = Payment.create(orderId, userId, amount);
+        failedPayment.fail();
+        Payment completedPayment = paymentWithStatus(orderId, userId, amount, status);
+        given(orderQueryPort.getPayableOrder(orderId, userId))
+                .willReturn(new PayableOrder(orderId, userId, amount));
+        given(paymentRepository.findAllByOrderId(orderId))
+                .willReturn(List.of(failedPayment, completedPayment));
+
+        assertPaymentError(
+                () -> paymentService.prepare(new PaymentPrepareCommand(userId, orderId)),
+                PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED
+        );
+
+        then(paymentRepository).should(never()).save(any(Payment.class));
+    }
+
     @Test
     @DisplayName("결제 승인 성공 시 PaymentCompletedEvent를 발행해야 한다")
     void confirm_PublishPaymentCompletedEvent_Success() {
@@ -184,6 +229,9 @@ class PaymentServiceUnitTest {
         verify(eventPublisher).publish(eventCaptor.capture());
 
         PaymentCompletedEvent event = eventCaptor.getValue();
+        assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.APPROVED);
+        assertThat(payment.getPaymentKey()).isEqualTo(paymentKey);
+        assertThat(payment.getApprovedAt()).isNotNull();
         assertThat(event.paymentId()).isEqualTo(payment.getPaymentId());
         assertThat(event.orderId()).isEqualTo(orderId);
         assertThat(event.userId()).isEqualTo(userId);
