@@ -48,7 +48,7 @@ class OrderJpaRepositoryTest {
         assertThat(result.getOrderStatus()).isEqualTo(Order.Status.PENDING);
         assertThat(result.getOrderItems()).hasSize(2);
         assertThat(result.getOrderItems())
-                .extracting(OrderItem::getOrderItemId)
+                .extracting(OrderItem::getId)
                 .doesNotContainNull();
         assertThat(result.getOrderItems())
                 .extracting(OrderItem::getItemId)

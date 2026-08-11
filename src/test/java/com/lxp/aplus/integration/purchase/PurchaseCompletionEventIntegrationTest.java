@@ -64,7 +64,7 @@ class PurchaseCompletionEventIntegrationTest {
                 List.of(OrderItem.createCourseItem(COURSE_ID, AMOUNT))
         );
         order = orderRepository.saveAndFlush(order);
-        orderItemId = order.getOrderItems().get(0).getOrderItemId();
+        orderItemId = order.getOrderItems().get(0).getId();
 
         payment = Payment.create(order.getOrderId(), USER_ID, AMOUNT);
         attempt = payment.prepareAttempt();

@@ -61,7 +61,7 @@ public class OrderService implements OrderUseCase {
         List<OrderCompletedEvent.Item> items = order.getOrderItems().stream()
                 .map(orderItem -> new OrderCompletedEvent.Item(
                         orderItem.getItemId(),
-                        orderItem.getOrderItemId()
+                        orderItem.getId()
                 ))
                 .toList();
 

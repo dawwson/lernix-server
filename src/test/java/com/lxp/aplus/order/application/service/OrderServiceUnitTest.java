@@ -104,8 +104,8 @@ class OrderServiceUnitTest {
 
         OrderItem item1 = OrderItem.createCourseItem(10L, BigDecimal.valueOf(10000));
         OrderItem item2 = OrderItem.createCourseItem(20L, BigDecimal.valueOf(30000));
-        ReflectionTestUtils.setField(item1, "orderItemId", 100L);
-        ReflectionTestUtils.setField(item2, "orderItemId", 200L);
+        ReflectionTestUtils.setField(item1, "id", 100L);
+        ReflectionTestUtils.setField(item2, "id", 200L);
 
         Order order = Order.create(userId, List.of(item1, item2));
         ReflectionTestUtils.setField(order, "orderId", orderId);
