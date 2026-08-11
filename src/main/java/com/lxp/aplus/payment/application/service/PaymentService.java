@@ -67,7 +67,7 @@ public class PaymentService implements PaymentUseCase {
 
     @Override
     public void confirm(PaymentConfirmCommand command) {
-        Payment payment = paymentRepository.findById(command.paymentId())
+        Payment payment = paymentRepository.findByIdForUpdate(command.paymentId())
                 .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
         // 2. 결제 소유자 검증
         payment.validateOwner(command.userId());
@@ -79,7 +79,12 @@ public class PaymentService implements PaymentUseCase {
         // TODO: 추후 구현. 성공했다고 가정함
 
         // 5. 도메인 불변성 검증 -> 상태 변경
-        payment.approve(command.paymentAttemptId(), command.paymentKey(), command.amount());
+        Payment.ApprovalResult approvalResult = payment.approve(
+                command.paymentAttemptId(), command.paymentKey(), command.amount());
+
+        if (approvalResult == Payment.ApprovalResult.ALREADY_APPROVED) {
+            return;
+        }
 
         // 6. Payment 저장
         paymentRepository.save(payment);

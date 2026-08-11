@@ -42,4 +42,19 @@ class PaymentPersistenceAdapterTest {
                 .extracting("errorCode")
                 .isEqualTo(PaymentErrorCode.PAYMENT_PREPARE_CONFLICT);
     }
+
+    @Test
+    @DisplayName("동일 paymentKey의 PaymentAttempt 저장이 충돌하면 결제 승인 충돌 예외로 변환한다")
+    void save_duplicatePaymentKey_throwsPaymentApprovalConflict() {
+        Payment payment = Payment.create("order-1", 1L, BigDecimal.valueOf(40_000));
+        ConstraintViolationException constraintViolation = new ConstraintViolationException(
+                "duplicate payment key", new SQLException(), "uk_payment_attempts_payment_key");
+        given(jpaRepository.saveAndFlush(payment))
+                .willThrow(new DataIntegrityViolationException("duplicate payment key", constraintViolation));
+
+        assertThatThrownBy(() -> adapter.save(payment))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
+    }
 }

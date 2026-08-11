@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -73,6 +74,10 @@ public class PaymentAttempt {
 
     public boolean isPending() {
         return status == Status.PENDING;
+    }
+
+    boolean matchesApproval(String paymentKey) {
+        return status == Status.APPROVED && Objects.equals(this.paymentKey, paymentKey);
     }
 
     private void validatePending() {

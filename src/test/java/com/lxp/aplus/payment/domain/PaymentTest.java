@@ -53,12 +53,73 @@ class PaymentTest {
         Payment payment = payment();
         PaymentAttempt attempt = payment.prepareAttempt();
 
-        payment.approve(attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+        Payment.ApprovalResult result = payment.approve(
+                attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
 
+        assertThat(result).isEqualTo(Payment.ApprovalResult.FIRST_APPROVAL);
         assertThat(payment.getStatus()).isEqualTo(Payment.Status.PAID);
         assertThat(payment.getPaidAt()).isNotNull();
         assertThat(attempt.getStatus()).isEqualTo(PaymentAttempt.Status.APPROVED);
         assertThat(attempt.getPaymentKey()).isEqualTo("payment-key");
+    }
+
+    @Test
+    @DisplayName("승인된 결제에 동일한 승인 요청이 들어오면 기존 승인으로 판단한다")
+    void approve_sameApprovedRequest_returnsAlreadyApproved() {
+        Payment payment = payment();
+        PaymentAttempt attempt = payment.prepareAttempt();
+        payment.approve(attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+
+        Payment.ApprovalResult result = payment.approve(
+                attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+
+        assertThat(result).isEqualTo(Payment.ApprovalResult.ALREADY_APPROVED);
+        assertThat(payment.getStatus()).isEqualTo(Payment.Status.PAID);
+        assertThat(attempt.getStatus()).isEqualTo(PaymentAttempt.Status.APPROVED);
+    }
+
+    @Test
+    @DisplayName("승인된 결제에 다른 paymentKey가 들어오면 승인 충돌로 거부한다")
+    void approve_approvedPaymentWithDifferentPaymentKey_throwsApprovalConflict() {
+        Payment payment = payment();
+        PaymentAttempt attempt = payment.prepareAttempt();
+        payment.approve(attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+
+        assertThatThrownBy(() -> payment.approve(
+                attempt.getId(), "different-key", BigDecimal.valueOf(40_000)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
+    }
+
+    @Test
+    @DisplayName("승인된 결제에 다른 금액이 들어오면 승인 충돌로 거부한다")
+    void approve_approvedPaymentWithDifferentAmount_throwsApprovalConflict() {
+        Payment payment = payment();
+        PaymentAttempt attempt = payment.prepareAttempt();
+        payment.approve(attempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+
+        assertThatThrownBy(() -> payment.approve(
+                attempt.getId(), "payment-key", BigDecimal.valueOf(30_000)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
+    }
+
+    @Test
+    @DisplayName("승인된 결제에 다른 결제 시도가 들어오면 승인 충돌로 거부한다")
+    void approve_approvedPaymentWithDifferentAttempt_throwsApprovalConflict() {
+        Payment payment = payment();
+        PaymentAttempt previousAttempt = payment.prepareAttempt();
+        payment.fail(previousAttempt);
+        PaymentAttempt approvedAttempt = payment.prepareAttempt();
+        payment.approve(approvedAttempt.getId(), "payment-key", BigDecimal.valueOf(40_000));
+
+        assertThatThrownBy(() -> payment.approve(
+                previousAttempt.getId(), "payment-key", BigDecimal.valueOf(40_000)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
     }
 
     @Test
