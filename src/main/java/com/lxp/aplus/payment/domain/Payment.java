@@ -83,14 +83,21 @@ public class Payment extends BaseAggregateRoot {
                 .findFirst();
     }
 
-    public void approve(String attemptId, String paymentKey, BigDecimal approvedAmount) {
+    public ApprovalResult approve(String attemptId, String paymentKey, BigDecimal approvedAmount) {
         PaymentAttempt attempt = getAttempt(attemptId);
+
+        if (status == Status.PAID) {
+            validateSameApproval(attempt, paymentKey, approvedAmount);
+            return ApprovalResult.ALREADY_APPROVED;
+        }
+
         validateUnpaid();
         validatePendingAttempt(attempt);
         validateAmount(approvedAmount);
         attempt.approve(paymentKey);
         this.status = Status.PAID;
         this.paidAt = LocalDateTime.now();
+        return ApprovalResult.FIRST_APPROVAL;
     }
 
     public void fail(PaymentAttempt attempt) {
@@ -154,6 +161,18 @@ public class Payment extends BaseAggregateRoot {
         }
     }
 
+    /*
+     * 기존 승인 요청과 완전히 동일한 재요청인지 검증
+     */
+    private void validateSameApproval(PaymentAttempt attempt, String paymentKey, BigDecimal approvedAmount) {
+        boolean sameAttemptApproval = attempt.matchesApproval(paymentKey);
+        boolean sameAmount = amount.compareTo(approvedAmount) == 0;
+
+        if (!sameAttemptApproval || !sameAmount) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
+        }
+    }
+
     private PaymentAttempt getAttempt(String attemptId) {
         return attempts.stream()
                 .filter(attempt -> Objects.equals(attempt.getId(), attemptId))
@@ -162,4 +181,6 @@ public class Payment extends BaseAggregateRoot {
     }
 
     public enum Status { UNPAID, PAID, CANCELED, REFUNDED }
+
+    public enum ApprovalResult { FIRST_APPROVAL, ALREADY_APPROVED }
 }
