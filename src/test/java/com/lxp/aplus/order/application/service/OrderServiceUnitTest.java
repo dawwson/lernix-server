@@ -12,7 +12,6 @@ import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -121,7 +120,7 @@ class OrderServiceUnitTest {
         verify(eventPublisher).publish(eventCaptor.capture());
 
         OrderCompletedEvent event = eventCaptor.getValue();
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(order.getOrderStatus()).isEqualTo(Order.Status.COMPLETED);
         assertThat(order.getApprovedPaymentId()).isEqualTo(paymentId);
         assertThat(event.orderId()).isEqualTo(orderId);
         assertThat(event.userId()).isEqualTo(userId);
@@ -171,7 +170,7 @@ class OrderServiceUnitTest {
                 OrderErrorCode.ORDER_AMOUNT_MISMATCH
         );
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getOrderStatus()).isEqualTo(Order.Status.PENDING);
         assertThat(order.getApprovedPaymentId()).isNull();
         then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
     }

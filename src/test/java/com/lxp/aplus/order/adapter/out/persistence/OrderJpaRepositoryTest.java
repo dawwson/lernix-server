@@ -2,7 +2,6 @@ package com.lxp.aplus.order.adapter.out.persistence;
 
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderStatus;
 import com.lxp.aplus.testing.config.PersistenceTestConfiguration;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +45,7 @@ class OrderJpaRepositoryTest {
         Order result = repository.findById(order.getOrderId()).orElseThrow();
         assertThat(result.getUserId()).isEqualTo(1L);
         assertThat(result.getAmount()).isEqualByComparingTo("40000");
-        assertThat(result.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(result.getOrderStatus()).isEqualTo(Order.Status.PENDING);
         assertThat(result.getOrderItems()).hasSize(2);
         assertThat(result.getOrderItems())
                 .extracting(OrderItem::getOrderItemId)
@@ -72,7 +71,7 @@ class OrderJpaRepositoryTest {
         flushAndClear();
 
         Order result = repository.findById(order.getOrderId()).orElseThrow();
-        assertThat(result.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(result.getOrderStatus()).isEqualTo(Order.Status.COMPLETED);
         assertThat(result.getApprovedPaymentId()).isEqualTo("payment-1");
         assertThat(result.getCompletedAt()).isNotNull();
     }

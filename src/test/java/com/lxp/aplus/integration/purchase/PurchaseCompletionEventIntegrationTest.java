@@ -7,7 +7,6 @@ import com.lxp.aplus.enrollment.application.port.in.EnrollmentCommandUseCase;
 import com.lxp.aplus.order.adapter.out.persistence.OrderJpaRepository;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderStatus;
 import com.lxp.aplus.payment.adapter.out.persistence.PaymentJpaRepository;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
@@ -93,7 +92,7 @@ class PurchaseCompletionEventIntegrationTest {
 
         assertThat(approvedPayment.getStatus()).isEqualTo(Payment.Status.PAID);
         assertThat(approvedAttempt.getPaymentKey()).isEqualTo("payment-key");
-        assertThat(completedOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(completedOrder.getOrderStatus()).isEqualTo(Order.Status.COMPLETED);
         assertThat(completedOrder.getApprovedPaymentId()).isEqualTo(payment.getId());
         verify(enrollmentCommandUseCase, timeout(3_000)).enroll(
                 new EnrollmentCommand(USER_ID, COURSE_ID, orderItemId)
@@ -123,7 +122,7 @@ class PurchaseCompletionEventIntegrationTest {
         Order pendingOrder = orderRepository.findById(order.getOrderId()).orElseThrow();
         assertThat(pendingPayment.getStatus()).isEqualTo(Payment.Status.UNPAID);
         assertThat(pendingAttempt.getPaymentKey()).isNull();
-        assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(pendingOrder.getOrderStatus()).isEqualTo(Order.Status.PENDING);
         assertThat(pendingOrder.getApprovedPaymentId()).isNull();
     }
 }

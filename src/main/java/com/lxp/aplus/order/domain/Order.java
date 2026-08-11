@@ -12,8 +12,11 @@ import org.hibernate.annotations.ColumnDefault;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 // TODO: amount, currency 묶어서 VO(Money)로 만들기
@@ -42,12 +45,13 @@ public class Order extends BaseAggregateRoot {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Getter(AccessLevel.NONE) // Lombok getter 생성을 비활성화
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @ColumnDefault("'PENDING'")
-    private OrderStatus orderStatus = OrderStatus.PENDING;
+    private Status orderStatus = Status.PENDING;
 
     @Column
     private String approvedPaymentId; // orderStatus = COMPLETED일 때만 존재
@@ -70,8 +74,8 @@ public class Order extends BaseAggregateRoot {
         this.amount = amount;
 
         for (OrderItem orderItem : orderItems) {
-            this.orderItems.add(orderItem);
             orderItem.assignOrder(this);
+            this.orderItems.add(orderItem);
         }
     }
 
@@ -84,6 +88,9 @@ public class Order extends BaseAggregateRoot {
             Long userId,
             List<OrderItem> orderItems
     ) {
+        validateUserId(userId);
+        validateOrderItems(orderItems);
+
         // 1. orderId 생성
         String orderId = UUID.randomUUID().toString();
 
@@ -112,17 +119,19 @@ public class Order extends BaseAggregateRoot {
             String approvedPaymentId,
             BigDecimal approvedAmount
     ) {
-        validateAmount(approvedAmount);
+        validateApprovedPaymentId(approvedPaymentId);
 
-        if (this.orderStatus == OrderStatus.COMPLETED) {
+        if (this.orderStatus == Status.COMPLETED) {
             validateSameApprovedPayment(approvedPaymentId);
+            validateAmount(approvedAmount);
             return CompletionResult.ALREADY_COMPLETED;
         }
 
         validatePending();
         validateApprovedPaymentNotAssigned();
+        validateAmount(approvedAmount);
 
-        this.orderStatus = OrderStatus.COMPLETED;
+        this.orderStatus = Status.COMPLETED;
         this.approvedPaymentId = approvedPaymentId;
         this.completedAt = LocalDateTime.now();
 
@@ -136,13 +145,48 @@ public class Order extends BaseAggregateRoot {
      */
     public void cancel(String reason) {
         validatePending();
-        this.orderStatus = OrderStatus.CANCELED;
+        validateCancelReason(reason);
+        this.orderStatus = Status.CANCELED;
         this.cancelReason = reason;
     }
 
+    public List<OrderItem> getOrderItems() {
+        return Collections.unmodifiableList(orderItems);
+    }
+
+    private static void validateUserId(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(OrderErrorCode.ORDER_INVALID_USER);
+        }
+    }
+
+    private static void validateOrderItems(List<OrderItem> orderItems) {
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new BusinessException(OrderErrorCode.ORDER_INVALID_ITEM);
+        }
+
+        Set<OrderItem> uniqueItems = Collections.newSetFromMap(new IdentityHashMap<>());
+        boolean hasInvalidItem = orderItems.stream()
+                .anyMatch(item -> item == null || !uniqueItems.add(item));
+
+        if (hasInvalidItem) {
+            throw new BusinessException(OrderErrorCode.ORDER_INVALID_ITEM);
+        }
+
+        if (orderItems.stream().anyMatch(item -> item.getOrder() != null)) {
+            throw new BusinessException(OrderErrorCode.ORDER_ITEM_ALREADY_ASSIGNED);
+        }
+    }
+
     private void validatePending() {
-        if (this.orderStatus != OrderStatus.PENDING) {
+        if (this.orderStatus != Status.PENDING) {
             throw new BusinessException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+    }
+
+    private void validateApprovedPaymentId(String approvedPaymentId) {
+        if (approvedPaymentId == null || approvedPaymentId.isBlank()) {
+            throw new BusinessException(OrderErrorCode.ORDER_INVALID_PAYMENT_INFO);
         }
     }
 
@@ -159,6 +203,9 @@ public class Order extends BaseAggregateRoot {
     }
 
     private void validateAmount(BigDecimal approvedAmount) {
+        if (approvedAmount == null) {
+            throw new BusinessException(OrderErrorCode.ORDER_INVALID_PAYMENT_INFO);
+        }
 
         boolean isAmountMismatched = this.amount.compareTo(approvedAmount) != 0;
 
@@ -166,5 +213,18 @@ public class Order extends BaseAggregateRoot {
             throw new BusinessException(OrderErrorCode.ORDER_AMOUNT_MISMATCH);
         }
     }
+
+    private void validateCancelReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException(OrderErrorCode.ORDER_CANCEL_REASON_REQUIRED);
+        }
+    }
+
+    public enum Status {
+        PENDING,
+        COMPLETED,
+        CANCELED
+    }
+
     public enum CompletionResult { FIRST_COMPLETION, ALREADY_COMPLETED }
 }
