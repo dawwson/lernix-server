@@ -20,12 +20,15 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
     @Override
     public Payment save(Payment payment) {
         try {
-            // NOTE: SQL 즉시 실행으로 order_id UNIQUE 무결성 위반 확인
+            // NOTE: saveAndFlush - SQL을 즉시 실행해 Payment 관련 UNIQUE 무결성 위반을 현재 호출 안에서 확인한다.
             return jpaRepository.saveAndFlush(payment);
         } catch (DataIntegrityViolationException exception) {
-            // TODO: DB 제약 위반은 Payment 전용 예외로 변환하고, BusinessException 매핑은 application service로 이동한다.
-            if (hasOrderIdUniqueConstraint(exception)) {
+            // TODO: application layer에서 예외 처리를 할 수 있을지 고민 필요
+            if (hasUniqueConstraint(exception, "uk_payments_order_id")) {
                 throw new BusinessException(PaymentErrorCode.PAYMENT_PREPARE_CONFLICT);
+            }
+            if (hasUniqueConstraint(exception, "uk_payment_attempts_payment_key")) {
+                throw new BusinessException(PaymentErrorCode.PAYMENT_APPROVAL_CONFLICT);
             }
             throw exception;
         }
@@ -64,14 +67,14 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
         return jpaRepository.findByAttemptId(attemptId);
     }
 
-    private boolean hasOrderIdUniqueConstraint(Throwable exception) {
+    private boolean hasUniqueConstraint(Throwable exception, String constraintName) {
         Throwable cause = exception;
         while (cause != null) {
             if (cause instanceof org.hibernate.exception.ConstraintViolationException constraintViolation
                     && constraintViolation.getConstraintName() != null) {
                 return constraintViolation.getConstraintName()
                         .toLowerCase()
-                        .contains("uk_payments_order_id");
+                        .contains(constraintName.toLowerCase());
             }
             cause = cause.getCause();
         }
