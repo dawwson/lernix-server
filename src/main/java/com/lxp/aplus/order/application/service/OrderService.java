@@ -47,10 +47,15 @@ public class OrderService implements OrderUseCase {
 
     @Override
     public void completeOrder(String orderId, String approvedPaymentId, BigDecimal approvedAmount) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND));
 
-        order.completeWithApprovedPayment(approvedPaymentId, approvedAmount);
+        Order.CompletionResult completionResult =
+                order.completeWithApprovedPayment(approvedPaymentId, approvedAmount);
+
+        if (completionResult == Order.CompletionResult.ALREADY_COMPLETED) {
+            return;
+        }
 
         // Enrollment가 Order를 조회하지 않도록 수강권 생성에 필요한 항목만 이벤트로 전달합니다.
         List<OrderCompletedEvent.Item> items = order.getOrderItems().stream()

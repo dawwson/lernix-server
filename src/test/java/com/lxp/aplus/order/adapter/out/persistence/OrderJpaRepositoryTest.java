@@ -77,6 +77,21 @@ class OrderJpaRepositoryTest {
         assertThat(result.getCompletedAt()).isNotNull();
     }
 
+    @Test
+    @DisplayName("주문 완료 처리용 비관적 잠금 조회로 주문을 찾는다")
+    void findByIdForUpdate_existingOrder_returnsOrder() {
+        Order order = Order.create(
+                1L,
+                List.of(OrderItem.createCourseItem(10L, BigDecimal.valueOf(40_000)))
+        );
+        repository.save(order);
+        flushAndClear();
+
+        Order result = repository.findByIdForUpdate(order.getOrderId()).orElseThrow();
+
+        assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
+    }
+
     private void flushAndClear() {
         entityManager.flush();
         entityManager.clear();

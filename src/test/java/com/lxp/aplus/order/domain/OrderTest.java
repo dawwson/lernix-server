@@ -38,8 +38,10 @@ class OrderTest {
     void completeWithApprovedPayment_pendingOrder_completesOrder() {
         Order order = order(40_000);
 
-        order.completeWithApprovedPayment("payment-1", BigDecimal.valueOf(40_000));
+        Order.CompletionResult result =
+                order.completeWithApprovedPayment("payment-1", BigDecimal.valueOf(40_000));
 
+        assertThat(result).isEqualTo(Order.CompletionResult.FIRST_COMPLETION);
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
         assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
         assertThat(order.getCompletedAt()).isNotNull();
@@ -60,14 +62,27 @@ class OrderTest {
     }
 
     @Test
-    @DisplayName("완료된 주문을 다시 완료하면 잘못된 상태 예외가 발생한다")
-    void completeWithApprovedPayment_completedOrder_throwsInvalidStatus() {
+    @DisplayName("동일한 결제로 완료된 주문을 다시 완료하면 기존 완료 결과를 반환한다")
+    void completeWithApprovedPayment_samePayment_returnsAlreadyCompleted() {
+        Order order = order(40_000);
+        order.completeWithApprovedPayment("payment-1", BigDecimal.valueOf(40_000));
+
+        Order.CompletionResult result =
+                order.completeWithApprovedPayment("payment-1", BigDecimal.valueOf(40_000));
+
+        assertThat(result).isEqualTo(Order.CompletionResult.ALREADY_COMPLETED);
+        assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
+    }
+
+    @Test
+    @DisplayName("다른 결제로 완료된 주문을 다시 완료하면 결제 충돌 예외가 발생한다")
+    void completeWithApprovedPayment_differentPayment_throwsPaymentConflict() {
         Order order = order(40_000);
         order.completeWithApprovedPayment("payment-1", BigDecimal.valueOf(40_000));
 
         assertOrderError(
                 () -> order.completeWithApprovedPayment("payment-2", BigDecimal.valueOf(40_000)),
-                OrderErrorCode.ORDER_INVALID_STATUS
+                OrderErrorCode.ORDER_PAYMENT_CONFLICT
         );
         assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
     }

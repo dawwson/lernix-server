@@ -13,11 +13,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 // TODO: amount, currency 묶어서 VO(Money)로 만들기
 // TODO: 특정 상태에 종속적인 필드를 관리하는 구조적인 방법 고민(approvedPaymentId, cancelReason)
-// TODO: 중복 결제 준비 API 요청 방지 (멱등키 or paymentId)
 @Entity
 @Table(name = "orders")
 @Getter
@@ -68,15 +68,12 @@ public class Order extends BaseAggregateRoot {
         this.userId = userId;
         this.currency = "KRW";
         this.amount = amount;
-        //this.orderItems = orderItems;
 
         for (OrderItem orderItem : orderItems) {
             this.orderItems.add(orderItem);
             orderItem.assignOrder(this);
         }
     }
-
-    /* ========= 생성 ========= */
 
     /*
      * 주문 생성
@@ -88,7 +85,6 @@ public class Order extends BaseAggregateRoot {
             List<OrderItem> orderItems
     ) {
         // 1. orderId 생성
-        // TODO: orderId 생성 규칙 만들기
         String orderId = UUID.randomUUID().toString();
 
         // 2. 총액 계산
@@ -105,27 +101,32 @@ public class Order extends BaseAggregateRoot {
         );
     }
 
-    /* ========= 도메인 행위 ========= */
-
     /*
      * 결제 승인 -> 주문 완료
      * - PENDING 상태에서만 수행 가능
      * - 하나의 Order에는 승인된 Payment가 하나만 존재
      * - 승인된 결제 금액 = 주문 금액
      *
-     * TODO: Payment Approved 이벤트의 결과를 반영하도록 수정
      */
-    public void completeWithApprovedPayment(
-            String paymentId,
+    public CompletionResult completeWithApprovedPayment(
+            String approvedPaymentId,
             BigDecimal approvedAmount
     ) {
-        validatePending();
-        validateNoApprovedPayment();
         validateAmount(approvedAmount);
 
+        if (this.orderStatus == OrderStatus.COMPLETED) {
+            validateSameApprovedPayment(approvedPaymentId);
+            return CompletionResult.ALREADY_COMPLETED;
+        }
+
+        validatePending();
+        validateApprovedPaymentNotAssigned();
+
         this.orderStatus = OrderStatus.COMPLETED;
-        this.approvedPaymentId = paymentId;
+        this.approvedPaymentId = approvedPaymentId;
         this.completedAt = LocalDateTime.now();
+
+        return CompletionResult.FIRST_COMPLETION;
     }
 
     /*
@@ -139,29 +140,24 @@ public class Order extends BaseAggregateRoot {
         this.cancelReason = reason;
     }
 
-    /* ========= 검증 ========= */
-
-    /*
-     * Order가 PENDING 상태인지 확인
-     */
     private void validatePending() {
         if (this.orderStatus != OrderStatus.PENDING) {
             throw new BusinessException(OrderErrorCode.ORDER_INVALID_STATUS);
         }
     }
 
-    /*
-     * 결제 중복 승인 방지
-     */
-    private void validateNoApprovedPayment() {
+    private void validateApprovedPaymentNotAssigned() {
         if (this.approvedPaymentId != null) {
             throw new BusinessException(OrderErrorCode.ORDER_ALREADY_PAID);
         }
     }
 
-    /*
-     * 금액 정합성 검증
-     */
+    private void validateSameApprovedPayment(String paymentId) {
+        if (!Objects.equals(this.approvedPaymentId, paymentId)) {
+            throw new BusinessException(OrderErrorCode.ORDER_PAYMENT_CONFLICT);
+        }
+    }
+
     private void validateAmount(BigDecimal approvedAmount) {
 
         boolean isAmountMismatched = this.amount.compareTo(approvedAmount) != 0;
@@ -170,4 +166,5 @@ public class Order extends BaseAggregateRoot {
             throw new BusinessException(OrderErrorCode.ORDER_AMOUNT_MISMATCH);
         }
     }
+    public enum CompletionResult { FIRST_COMPLETION, ALREADY_COMPLETED }
 }
