@@ -37,6 +37,13 @@ public class PaymentPersistenceAdapter implements PaymentRepositoryPort {
     }
 
     @Override
+    public Optional<Payment> findByIdForUpdate(String id) {
+        Optional<Payment> result = jpaRepository.findByIdForUpdate(id);
+        result.ifPresent(payment -> Hibernate.initialize(payment.getAttempts()));
+        return result;
+    }
+
+    @Override
     public Optional<Payment> findByOrderIdForUpdate(String orderId) {
         Optional<Payment> result = jpaRepository.findByOrderIdForUpdate(orderId);
         if (result.isEmpty()) {

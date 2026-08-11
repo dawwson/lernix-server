@@ -12,9 +12,14 @@ import java.util.Optional;
 
 public interface PaymentJpaRepository extends JpaRepository<Payment, String>  {
     @Override
-    // Payment 조회 시 attempts를 함께 fetch하여 추가 지연 로딩 쿼리를 방지한다.
+    // NOTE: @EntityGraph - Payment 조회 시 attempts를 함께 fetch하여 추가 지연 로딩 쿼리를 방지한다.
     @EntityGraph(attributePaths = "attempts")
     Optional<Payment> findById(String id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    // NOTE: custom method name 사용을 위해 쿼리 추가
+    @Query("select p from Payment p where p.id = :id")
+    Optional<Payment> findByIdForUpdate(@Param("id") String id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Payment p where p.orderId = :orderId")

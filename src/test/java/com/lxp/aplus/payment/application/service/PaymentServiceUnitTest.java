@@ -131,7 +131,7 @@ class PaymentServiceUnitTest {
     void confirm_pendingAttempt_completesPaymentAndPublishesEvent() {
         Payment payment = Payment.create("order-1", 1L, amount());
         PaymentAttempt attempt = payment.prepareAttempt();
-        given(paymentRepository.findById(payment.getId())).willReturn(Optional.of(payment));
+        given(paymentRepository.findByIdForUpdate(payment.getId())).willReturn(Optional.of(payment));
 
         service.confirm(new PaymentConfirmCommand(
                 1L, payment.getId(), attempt.getId(), "order-1", "key", amount()));
@@ -140,6 +140,21 @@ class PaymentServiceUnitTest {
         assertThat(attempt.getStatus()).isEqualTo(PaymentAttempt.Status.APPROVED);
         then(paymentRepository).should().save(payment);
         then(eventPublisher).should().publish(org.mockito.ArgumentMatchers.argThat(e -> e.paymentId().equals(payment.getId())));
+    }
+
+    @Test
+    @DisplayName("동일한 승인 요청을 반복하면 저장과 완료 이벤트를 다시 실행하지 않는다")
+    void confirm_sameApprovedRequest_doesNotSaveOrRepublishEvent() {
+        Payment payment = Payment.create("order-1", 1L, amount());
+        PaymentAttempt attempt = payment.prepareAttempt();
+        payment.approve(attempt.getId(), "key", amount());
+        given(paymentRepository.findByIdForUpdate(payment.getId())).willReturn(Optional.of(payment));
+
+        service.confirm(new PaymentConfirmCommand(
+                1L, payment.getId(), attempt.getId(), "order-1", "key", amount()));
+
+        then(paymentRepository).should(never()).save(payment);
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     private BigDecimal amount() { return BigDecimal.valueOf(40_000); }

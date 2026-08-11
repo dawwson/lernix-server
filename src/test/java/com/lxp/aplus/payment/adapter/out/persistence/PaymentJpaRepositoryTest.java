@@ -57,6 +57,22 @@ class PaymentJpaRepositoryTest {
     }
 
     @Test
+    @DisplayName("Payment ID로 잠금 조회하면 Payment와 PaymentAttempt를 함께 반환한다")
+    void findByIdForUpdate_existingPayment_returnsAggregate() {
+        Payment payment = Payment.create("order-1", 1L, BigDecimal.valueOf(40_000));
+        PaymentAttempt attempt = payment.prepareAttempt();
+        paymentRepository.saveAndFlush(payment);
+        flushAndClear();
+
+        Payment result = paymentRepository.findByIdForUpdate(payment.getId()).orElseThrow();
+
+        assertThat(result.getId()).isEqualTo(payment.getId());
+        assertThat(result.getAttempts())
+                .extracting(PaymentAttempt::getId)
+                .containsExactly(attempt.getId());
+    }
+
+    @Test
     @DisplayName("동일 주문에는 Payment를 하나만 저장할 수 있다")
     void save_duplicateOrderId_throwsDataIntegrityViolation() {
         paymentRepository.saveAndFlush(Payment.create("order-1", 1L, BigDecimal.TEN));
