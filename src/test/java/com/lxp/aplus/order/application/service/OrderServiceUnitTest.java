@@ -12,7 +12,6 @@ import com.lxp.aplus.order.application.port.out.event.model.OrderCompletedEvent;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
 import com.lxp.aplus.order.domain.OrderItem;
-import com.lxp.aplus.order.domain.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,13 +104,13 @@ class OrderServiceUnitTest {
 
         OrderItem item1 = OrderItem.createCourseItem(10L, BigDecimal.valueOf(10000));
         OrderItem item2 = OrderItem.createCourseItem(20L, BigDecimal.valueOf(30000));
-        ReflectionTestUtils.setField(item1, "orderItemId", 100L);
-        ReflectionTestUtils.setField(item2, "orderItemId", 200L);
+        ReflectionTestUtils.setField(item1, "id", 100L);
+        ReflectionTestUtils.setField(item2, "id", 200L);
 
         Order order = Order.create(userId, List.of(item1, item2));
         ReflectionTestUtils.setField(order, "orderId", orderId);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
         // when
         orderService.completeOrder(orderId, paymentId, amount);
@@ -121,7 +120,7 @@ class OrderServiceUnitTest {
         verify(eventPublisher).publish(eventCaptor.capture());
 
         OrderCompletedEvent event = eventCaptor.getValue();
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(order.getOrderStatus()).isEqualTo(Order.Status.COMPLETED);
         assertThat(order.getApprovedPaymentId()).isEqualTo(paymentId);
         assertThat(event.orderId()).isEqualTo(orderId);
         assertThat(event.userId()).isEqualTo(userId);
@@ -137,7 +136,7 @@ class OrderServiceUnitTest {
     @DisplayName("완료할 주문이 없으면 주문 없음 예외가 발생하고 이벤트를 발행하지 않는다")
     void completeOrder_missingOrder_throwsOrderNotFoundWithoutEvent() {
         String orderId = "missing-order";
-        given(orderRepository.findById(orderId)).willReturn(Optional.empty());
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.empty());
 
         assertOrderError(
                 () -> orderService.completeOrder(
@@ -160,7 +159,7 @@ class OrderServiceUnitTest {
                 List.of(OrderItem.createCourseItem(10L, BigDecimal.valueOf(40_000)))
         );
         ReflectionTestUtils.setField(order, "orderId", orderId);
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
         assertOrderError(
                 () -> orderService.completeOrder(
@@ -171,14 +170,14 @@ class OrderServiceUnitTest {
                 OrderErrorCode.ORDER_AMOUNT_MISMATCH
         );
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getOrderStatus()).isEqualTo(Order.Status.PENDING);
         assertThat(order.getApprovedPaymentId()).isNull();
         then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
     }
 
     @Test
-    @DisplayName("이미 완료된 주문을 다시 완료하면 이벤트를 발행하지 않는다")
-    void completeOrder_completedOrder_doesNotPublishEventAgain() {
+    @DisplayName("동일한 결제로 완료된 주문을 다시 완료하면 주문 완료 이벤트를 발행하지 않는다")
+    void completeOrder_samePayment_doesNotPublishEventAgain() {
         String orderId = "order-1";
         BigDecimal amount = BigDecimal.valueOf(40_000);
         Order order = Order.create(
@@ -187,14 +186,32 @@ class OrderServiceUnitTest {
         );
         ReflectionTestUtils.setField(order, "orderId", orderId);
         order.completeWithApprovedPayment("payment-1", amount);
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
+
+        orderService.completeOrder(orderId, "payment-1", amount);
+
+        assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
+        then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
+    }
+
+    @Test
+    @DisplayName("다른 결제로 완료된 주문을 다시 완료하면 충돌하고 주문 완료 이벤트를 발행하지 않는다")
+    void completeOrder_differentPayment_throwsPaymentConflictWithoutEvent() {
+        String orderId = "order-1";
+        BigDecimal amount = BigDecimal.valueOf(40_000);
+        Order order = Order.create(
+                1L,
+                List.of(OrderItem.createCourseItem(10L, amount))
+        );
+        ReflectionTestUtils.setField(order, "orderId", orderId);
+        order.completeWithApprovedPayment("payment-1", amount);
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
         assertOrderError(
                 () -> orderService.completeOrder(orderId, "payment-2", amount),
-                OrderErrorCode.ORDER_INVALID_STATUS
+                OrderErrorCode.ORDER_PAYMENT_CONFLICT
         );
 
-        assertThat(order.getApprovedPaymentId()).isEqualTo("payment-1");
         then(eventPublisher).should(never()).publish(any(OrderCompletedEvent.class));
     }
 

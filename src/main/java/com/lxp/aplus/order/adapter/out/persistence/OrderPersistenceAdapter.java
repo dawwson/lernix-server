@@ -22,4 +22,9 @@ public class OrderPersistenceAdapter implements OrderRepositoryPort {
     public Optional<Order> findById(String id) {
         return jpaRepository.findById(id);
     }
+
+    @Override
+    public Optional<Order> findByIdForUpdate(String id) {
+        return jpaRepository.findByIdForUpdate(id);
+    }
 }

@@ -6,7 +6,6 @@ import com.lxp.aplus.order.application.port.in.OrderQueryToPaymentUseCase;
 import com.lxp.aplus.order.application.port.in.model.result.ChargeableOrder;
 import com.lxp.aplus.order.application.port.out.repository.OrderRepositoryPort;
 import com.lxp.aplus.order.domain.Order;
-import com.lxp.aplus.order.domain.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,7 @@ public class OrderQueryToPaymentService implements OrderQueryToPaymentUseCase {
             throw new BusinessException(OrderErrorCode.ORDER_NOT_FOUND);
         }
 
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
+        if (order.getOrderStatus() != Order.Status.PENDING) {
             throw new BusinessException(OrderErrorCode.ORDER_INVALID_STATUS);
         }
 

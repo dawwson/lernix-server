@@ -17,7 +17,8 @@ public enum EnrollmentErrorCode implements ErrorCode {
     ENROLLMENT_CANNOT_CANCEL_EXPIRED(HttpStatus.CONFLICT, "EE007", "수강 기간이 만료되어 취소할 수 없습니다."),
     ENROLLMENT_ALREADY_CANCELLED(HttpStatus.CONFLICT, "EE008", "이미 취소 처리된 건입니다."),
     ENROLLMENT_EXPIRED_HISTORY_ACCESS_DENIED(HttpStatus.BAD_REQUEST, "EE009", "수강 기간이 만료되어 학습 이력을 조회할 수 없습니다."),
-    ENROLLMENT_CANNOT_CANCEL_AFTER_STARTED(HttpStatus.CONFLICT, "EE010", "이미 학습을 시작하여 취소할 수 없습니다.");
+    ENROLLMENT_CANNOT_CANCEL_AFTER_STARTED(HttpStatus.CONFLICT, "EE010", "이미 학습을 시작하여 취소할 수 없습니다."),
+    ENROLLMENT_ORDER_ITEM_CONFLICT(HttpStatus.CONFLICT, "EE011", "주문 항목에 연결된 수강 정보가 요청과 일치하지 않습니다.");
 
     private final HttpStatus status;
     private final String code;

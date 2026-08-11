@@ -34,6 +34,11 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
     }
 
     @Override
+    public Optional<Enrollment> findByOrderItemId(Long orderItemId) {
+        return jpaRepository.findByOrderItemId(orderItemId);
+    }
+
+    @Override
     public boolean existsByStudentIdAndCourseId(Long studentId, Long courseId) {
         return jpaRepository.existsByStudentIdAndCourseId(studentId, courseId);
     }

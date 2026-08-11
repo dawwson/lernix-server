@@ -9,4 +9,6 @@ public interface OrderRepositoryPort {
     Order save(Order order);
 
     Optional<Order> findById(String id);
+
+    Optional<Order> findByIdForUpdate(String id);
 }

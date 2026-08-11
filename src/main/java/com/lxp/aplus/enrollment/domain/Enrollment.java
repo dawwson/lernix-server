@@ -15,6 +15,10 @@ import java.util.Objects;
         @UniqueConstraint(
                 name = "uk_enrollment_student_course",
                 columnNames = {"studentId", "courseId"}
+            ),
+        @UniqueConstraint(
+                name = "uk_enrollment_order_item",
+                columnNames = {"order_item_id"}
             )
         }
 )
@@ -48,7 +52,7 @@ public class Enrollment extends BaseAggregateRoot {
     private LocalDateTime expiredAt;
 
     public static Enrollment create(Long studentId, Long courseId, Long orderItemId) {
-        if (Objects.isNull(studentId) || Objects.isNull(courseId)) {
+        if (Objects.isNull(studentId) || Objects.isNull(courseId) || Objects.isNull(orderItemId)) {
             throw new BusinessException(GlobalErrorCode.INVALID_ARGUMENT);
         }
 
@@ -58,6 +62,11 @@ public class Enrollment extends BaseAggregateRoot {
                 .orderItemId(orderItemId)
                 .expiredAt(LocalDateTime.now().plusYears(DEFAULT_EXPIRATION_YEARS))
                 .build();
+    }
+
+    public boolean matches(Long studentId, Long courseId) {
+        return Objects.equals(this.studentId, studentId)
+                && Objects.equals(this.courseId, courseId);
     }
 
     public void cancel(LocalDateTime currentTime) {

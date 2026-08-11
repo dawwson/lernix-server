@@ -38,6 +38,16 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public Long enroll(EnrollmentCommand command) {
+        Enrollment existingEnrollment = enrollmentRepository.findByOrderItemId(command.orderItemId())
+                .orElse(null);
+
+        if (existingEnrollment != null) {
+            if (!existingEnrollment.matches(command.studentId(), command.courseId())) {
+                throw new BusinessException(EnrollmentErrorCode.ENROLLMENT_ORDER_ITEM_CONFLICT);
+            }
+            return existingEnrollment.getId();
+        }
+
         Long courseId = command.courseId();
 
         courseQueryPort.findCourseById(courseId)
