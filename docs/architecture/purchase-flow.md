@@ -9,8 +9,8 @@
 1. 사용자가 구매할 강좌를 선택합니다.
 2. `POST /api/orders`로 주문을 생성합니다.
 3. 생성된 `orderId`와 사용자 단위 `Idempotency-Key`로 `POST /api/payments/prepare`를 호출하고 주문별 결제를 식별하는 `paymentId`와 이번 승인 시도를 식별하는 `paymentAttemptId`를 받습니다.
-4. PG 승인 후 `paymentId`, `paymentAttemptId`, `orderId`로 `POST /api/payments/confirm`을 호출합니다.
-5. `PaymentCompletedEvent`가 발행되고 Order가 주문을 완료합니다.
+4. PG 승인 후 `paymentId`, `paymentAttemptId`, `orderId`, `paymentKey`, `amount`로 `POST /api/payments/confirm`을 호출합니다.
+5. Payment가 최초로 승인된 경우에만 `PaymentCompletedEvent`가 발행되고 Order가 주문을 완료합니다.
 6. `OrderCompletedEvent`가 발행되고 Enrollment가 수강권을 생성합니다.
 
 ```mermaid
@@ -24,7 +24,7 @@ sequenceDiagram
     Order-->>Client: orderId, amount
     Client->>Payment: POST /api/payments/prepare(orderId, Idempotency-Key)
     Payment-->>Client: paymentId, paymentAttemptId, orderId, amount
-    Client->>Payment: POST /api/payments/confirm(paymentId, paymentAttemptId, orderId)
+    Client->>Payment: POST /api/payments/confirm(paymentId, paymentAttemptId, orderId, paymentKey, amount)
     Payment-->>Order: PaymentCompletedEvent
     Order-->>Enrollment: OrderCompletedEvent
     Enrollment-->>Enrollment: create enrollments
@@ -46,11 +46,26 @@ sequenceDiagram
 
 멱등성 레코드와 Payment 변경은 같은 트랜잭션에서 처리합니다. 따라서 결제 준비가 실패하면 해당 요청이 생성한 `PROCESSING` 레코드도 함께 rollback됩니다.
 
+## 결제 승인 중복 요청 처리
+
+`paymentKey`는 PG 승인 식별자이며 승인 요청의 자연 멱등성 키로 사용합니다. 승인 서비스는 Payment 행을 비관적 락으로 조회해 동일 Payment에 대한 요청을 순서대로 판정합니다.
+
+| 요청 상황 | 처리 결과 |
+| --- | --- |
+| `paymentAttemptId`, `paymentKey`, `orderId`, `amount`가 모두 같은 승인 재요청 | 성공 응답, 상태 변경과 이벤트 재발행 없음 |
+| 승인된 PaymentAttempt에 다른 `paymentKey` 또는 `amount` 사용 | `409 Conflict` |
+| 동일 `paymentKey`를 다른 Payment에 사용 | `payment_key` UNIQUE 제약으로 차단하고 `409 Conflict` |
+| 동일 승인 요청 동시 실행 | Payment 행 잠금 후 순차 판정, 최초 요청만 상태 변경과 이벤트 발행 |
+
+최초 요청은 `Payment`를 `PAID`, 대상 `PaymentAttempt`를 `APPROVED`로 변경하고 `PaymentCompletedEvent`를 발행합니다. 잠금 대기 후 같은 승인 정보를 확인한 요청은 기존 승인을 성공으로 반환하되 저장과 이벤트 발행을 반복하지 않습니다.
+
+서로 다른 Payment는 서로 다른 행을 잠그므로 Payment 락만으로 전역 `paymentKey` 중복을 막을 수 없습니다. 승인 전 사전 조회도 조회와 저장 사이의 race condition을 제거하지 못하므로 `payment_key` UNIQUE 제약을 최종 방어선으로 사용합니다. 결정 배경은 [ADR 0004](../adr/0004-enforce-payment-key-uniqueness-in-database.md)에 기록합니다.
+
 ## 모듈 책임
 
 - **Cart**: 구매 후보 강좌를 보관하고 Course의 현재 가격과 판매 상태를 반영합니다.
 - **Order**: 구매 항목과 금액을 확정하고 결제 완료에 따라 주문 상태를 변경합니다. 주문 생성 시 Course가 강좌의 존재 여부와 판매 상태를 확인하며, `PUBLISHED` 강좌의 현재 가격만 Order에 제공합니다.
-- **Payment**: 주문별 결제 프로세스를 나타내는 Aggregate Root입니다. 개별 PG 승인 시도는 `PaymentAttempt`로 관리하며, 실패 후 재시도하면 같은 Payment 안에 새로운 Attempt를 생성합니다. 승인 요청은 `paymentId`와 `paymentAttemptId`로 Aggregate와 대상 시도를 각각 식별합니다.
+- **Payment**: 주문별 결제 프로세스를 나타내는 Aggregate Root입니다. 개별 PG 승인 시도는 `PaymentAttempt`로 관리하며, 실패 후 재시도하면 같은 Payment 안에 새로운 Attempt를 생성합니다. 승인 요청은 `paymentId`와 `paymentAttemptId`로 Aggregate와 대상 시도를 각각 식별하고, `paymentKey`로 동일 승인 재요청을 판정합니다.
 - **Enrollment**: 주문 완료 이벤트를 받아 수강권을 생성하며 Payment를 직접 알지 않습니다.
 
 ## 모듈 간 관계
@@ -69,4 +84,4 @@ Order -> Enrollment OrderCompletedEvent
 - 이벤트 listener는 트랜잭션 커밋 이후 실행되므로 후속 처리까지 하나의 원자적 트랜잭션으로 묶이지 않습니다.
 - Enrollment listener는 `@Retryable`로 일부 데이터 접근 장애를 재시도합니다.
 - 메시지 브로커와 Outbox 패턴은 적용하지 않았습니다.
-- 동일 키 동시 INSERT에서 발생하는 DB UNIQUE 충돌을 기존 결과로 복구하는 기능은 아직 적용하지 않았습니다.
+- 결제 준비 멱등성 레코드의 동일 키 동시 INSERT에서 발생하는 DB UNIQUE 충돌을 기존 결과로 복구하는 기능은 아직 적용하지 않았습니다.
