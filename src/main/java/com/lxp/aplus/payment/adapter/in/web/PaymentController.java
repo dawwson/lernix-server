@@ -11,6 +11,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import static com.lxp.aplus.common.result.code.PaymentResultCode.PAYMENT_CONFIRM_SUCCESS;
 import static com.lxp.aplus.common.result.code.PaymentResultCode.PAYMENT_PREPARE_SUCCESS;
@@ -18,6 +21,7 @@ import static com.lxp.aplus.common.result.code.PaymentResultCode.PAYMENT_PREPARE
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
+@Validated
 public class PaymentController {
 
     private final PaymentUseCase paymentUseCase;
@@ -25,10 +29,14 @@ public class PaymentController {
     @PostMapping("/prepare")
     public ResponseEntity<ResultResponse<PaymentPrepareResponse>> preparePayment(
             @Authenticated Long userId,
+            @RequestHeader(name = "Idempotency-Key")
+            @NotBlank(message = "Idempotency-Key는 필수입니다.")
+            @Size(max = 255, message = "Idempotency-Key는 255자 이하여야 합니다.")
+            String idempotencyKey,
             @RequestBody @Valid PaymentPrepareRequest request
     ) {
 
-        PaymentPrepareResult result = paymentUseCase.prepare(request.toCommand(userId));
+        PaymentPrepareResult result = paymentUseCase.prepare(request.toCommand(userId, idempotencyKey));
         PaymentPrepareResponse response = PaymentPrepareResponse.from(result);
 
         return ResponseEntity

@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record PaymentConfirmCommand(
         Long userId,
         String paymentId,
+        String paymentAttemptId,
         String orderId,
         String paymentKey,
         BigDecimal amount

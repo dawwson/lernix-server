@@ -63,30 +63,58 @@ class PaymentControllerTest {
         given(paymentUseCase.prepare(any(PaymentPrepareCommand.class)))
                 .willReturn(new PaymentPrepareResult(
                         "payment-1",
+                        "attempt-1",
                         "order-1",
                         BigDecimal.valueOf(40_000)
                 ));
 
         mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", "idempotency-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"orderId\":\"order-1\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value("SPM001"))
                 .andExpect(jsonPath("$.data.paymentId").value("payment-1"))
+                .andExpect(jsonPath("$.data.paymentAttemptId").value("attempt-1"))
                 .andExpect(jsonPath("$.data.orderId").value("order-1"))
                 .andExpect(jsonPath("$.data.amount").value(40_000));
 
         ArgumentCaptor<PaymentPrepareCommand> captor = ArgumentCaptor.forClass(PaymentPrepareCommand.class);
         then(paymentUseCase).should().prepare(captor.capture());
-        assertThat(captor.getValue()).isEqualTo(new PaymentPrepareCommand(USER_ID, "order-1"));
+        assertThat(captor.getValue()).isEqualTo(
+                new PaymentPrepareCommand(USER_ID, "order-1", "idempotency-key"));
     }
 
     @Test
     @DisplayName("주문 ID가 없으면 결제를 준비하지 않는다")
     void preparePayment_missingOrderId_returnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", "idempotency-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));
+    }
+
+    @Test
+    @DisplayName("Idempotency-Key 헤더가 없으면 결제를 준비하지 않는다")
+    void preparePayment_missingIdempotencyKey_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/payments/prepare")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":\"order-1\"}"))
+                .andExpect(status().isBadRequest());
+
+        then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));
+    }
+
+    @Test
+    @DisplayName("Idempotency-Key 헤더가 비어 있으면 결제를 준비하지 않는다")
+    void preparePayment_blankIdempotencyKey_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/payments/prepare")
+                        .header("Idempotency-Key", " ")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":\"order-1\"}"))
                 .andExpect(status().isBadRequest());
 
         then(paymentUseCase).should(never()).prepare(any(PaymentPrepareCommand.class));
@@ -100,6 +128,7 @@ class PaymentControllerTest {
                         .content("""
                                 {
                                   "paymentId": "payment-1",
+                                  "paymentAttemptId": "attempt-1",
                                   "orderId": "order-1",
                                   "amount": 40000,
                                   "paymentKey": "payment-key"
@@ -114,6 +143,7 @@ class PaymentControllerTest {
                 new PaymentConfirmCommand(
                         USER_ID,
                         "payment-1",
+                        "attempt-1",
                         "order-1",
                         "payment-key",
                         BigDecimal.valueOf(40_000)
@@ -123,10 +153,11 @@ class PaymentControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "{\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"paymentKey\":\"payment-key\"}",
-            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"amount\":40000}"
+            "{\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"orderId\":\"order-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"amount\":40000,\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"paymentKey\":\"payment-key\"}",
+            "{\"paymentId\":\"payment-1\",\"paymentAttemptId\":\"attempt-1\",\"orderId\":\"order-1\",\"amount\":40000}"
     })
     @DisplayName("필수 승인 정보가 없으면 결제를 승인하지 않는다")
     void confirmPayment_missingRequiredField_returnsBadRequest(String requestBody) throws Exception {

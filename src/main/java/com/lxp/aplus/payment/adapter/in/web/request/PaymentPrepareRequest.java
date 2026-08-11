@@ -7,10 +7,11 @@ public record PaymentPrepareRequest(
         @NotBlank(message = "orderId는 필수입니다.")
         String orderId
 ) {
-    public PaymentPrepareCommand toCommand(Long userId) {
+    public PaymentPrepareCommand toCommand(Long userId, String idempotencyKey) {
         return PaymentPrepareCommand.builder()
                 .userId(userId)
                 .orderId(orderId)
+                .idempotencyKey(idempotencyKey)
                 .build();
     }
 }

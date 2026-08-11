@@ -12,7 +12,7 @@ import com.lxp.aplus.payment.adapter.out.persistence.PaymentJpaRepository;
 import com.lxp.aplus.payment.application.port.in.PaymentUseCase;
 import com.lxp.aplus.payment.application.port.in.model.command.PaymentConfirmCommand;
 import com.lxp.aplus.payment.domain.Payment;
-import com.lxp.aplus.payment.domain.PaymentStatus;
+import com.lxp.aplus.payment.domain.PaymentAttempt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,6 +52,7 @@ class PurchaseCompletionEventIntegrationTest {
 
     private Order order;
     private Payment payment;
+    private PaymentAttempt attempt;
     private Long orderItemId;
 
     @BeforeEach
@@ -67,6 +68,7 @@ class PurchaseCompletionEventIntegrationTest {
         orderItemId = order.getOrderItems().get(0).getOrderItemId();
 
         payment = Payment.create(order.getOrderId(), USER_ID, AMOUNT);
+        attempt = payment.prepareAttempt();
         payment = paymentRepository.saveAndFlush(payment);
     }
 
@@ -75,19 +77,24 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_committedTransaction_completesOrderAndPublishesEnrollmentCommand() {
         paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
-                payment.getPaymentId(),
+                payment.getId(),
+                attempt.getId(),
                 order.getOrderId(),
                 "payment-key",
                 AMOUNT
         ));
 
-        Payment approvedPayment = paymentRepository.findById(payment.getPaymentId()).orElseThrow();
+        Payment approvedPayment = paymentRepository.findById(payment.getId()).orElseThrow();
+        PaymentAttempt approvedAttempt = approvedPayment.getAttempts().stream()
+                .filter(candidate -> candidate.getId().equals(attempt.getId()))
+                .findFirst()
+                .orElseThrow();
         Order completedOrder = orderRepository.findById(order.getOrderId()).orElseThrow();
 
-        assertThat(approvedPayment.getPaymentStatus()).isEqualTo(PaymentStatus.APPROVED);
-        assertThat(approvedPayment.getPaymentKey()).isEqualTo("payment-key");
+        assertThat(approvedPayment.getStatus()).isEqualTo(Payment.Status.PAID);
+        assertThat(approvedAttempt.getPaymentKey()).isEqualTo("payment-key");
         assertThat(completedOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
-        assertThat(completedOrder.getApprovedPaymentId()).isEqualTo(payment.getPaymentId());
+        assertThat(completedOrder.getApprovedPaymentId()).isEqualTo(payment.getId());
         verify(enrollmentCommandUseCase, timeout(3_000)).enroll(
                 new EnrollmentCommand(USER_ID, COURSE_ID, orderItemId)
         );
@@ -98,7 +105,8 @@ class PurchaseCompletionEventIntegrationTest {
     void confirmPayment_mismatchedAmount_keepsOrderPending() {
         assertThatThrownBy(() -> paymentUseCase.confirm(new PaymentConfirmCommand(
                 USER_ID,
-                payment.getPaymentId(),
+                payment.getId(),
+                attempt.getId(),
                 order.getOrderId(),
                 "payment-key",
                 BigDecimal.valueOf(39_000)
@@ -107,10 +115,14 @@ class PurchaseCompletionEventIntegrationTest {
                 .extracting("errorCode")
                 .isEqualTo(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
 
-        Payment pendingPayment = paymentRepository.findById(payment.getPaymentId()).orElseThrow();
+        Payment pendingPayment = paymentRepository.findById(payment.getId()).orElseThrow();
+        PaymentAttempt pendingAttempt = pendingPayment.getAttempts().stream()
+                .filter(candidate -> candidate.getId().equals(attempt.getId()))
+                .findFirst()
+                .orElseThrow();
         Order pendingOrder = orderRepository.findById(order.getOrderId()).orElseThrow();
-        assertThat(pendingPayment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
-        assertThat(pendingPayment.getPaymentKey()).isNull();
+        assertThat(pendingPayment.getStatus()).isEqualTo(Payment.Status.UNPAID);
+        assertThat(pendingAttempt.getPaymentKey()).isNull();
         assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(pendingOrder.getApprovedPaymentId()).isNull();
     }

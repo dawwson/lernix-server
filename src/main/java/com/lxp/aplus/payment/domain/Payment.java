@@ -10,224 +10,156 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
-// TODO: amount, currency 묶어서 VO(Money)로 만들기
 @Entity
-@Table(
-        name = "payments",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_payment_key", columnNames = "payment_key")
-        }
-)
+@Table(name = "payments", uniqueConstraints =
+        @UniqueConstraint(name = "uk_payments_order_id", columnNames = "order_id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseAggregateRoot {
 
     @Id
-    @Column(name = "id")
-    private String paymentId;  // 외부 시스템(운영/정산/CS)에 노출 가능
+    private String id;
 
-    // NOTE: Aggregate 간 연관은 ID 참조 수준으로만 둡니다.
     @Column(nullable = false, updatable = false)
     private Long userId;
 
     @Column(nullable = false, updatable = false)
     private String orderId;
 
-    @Column(unique = true)
-    private String paymentKey; // PG transactionId
+    @Column(nullable = false, updatable = false, precision = 19, scale = 0)
+    private BigDecimal amount;
 
     @Column(nullable = false, updatable = false, length = 3)
     private String currency;
 
-    // NOTE: precision = 19 -> 최대 19자리, scale = 0 -> 정수
-    // 대형 B2B 거래도 고려한 수치입니다.
-    @Column(nullable = false, updatable = false, precision = 19, scale = 0)
-    private BigDecimal amount;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus paymentStatus;
+    private Status status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false, length = 20)
-    private PaymentMethod paymentMethod;
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<PaymentAttempt> attempts = new ArrayList<>();
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false, length = 20)
-    private PgProvider pgProvider;
+    @Version
+    private Long version;
 
-    @Column
-    private LocalDateTime approvedAt;
-
-    @Column
+    private LocalDateTime paidAt;
     private LocalDateTime canceledAt;
-
-    @Column
     private LocalDateTime refundedAt;
 
-    private Payment(
-            String paymentId,
-            Long userId,
-            String orderId,
-            BigDecimal amount
-    ) {
-        this.paymentId = paymentId;
-        this.userId = userId;
+    private Payment(String id, String orderId, Long userId, BigDecimal amount) {
+        this.id = id;
         this.orderId = orderId;
+        this.userId = userId;
         this.amount = amount;
         this.currency = "KRW";
-        this.paymentMethod = PaymentMethod.CARD;
-        this.pgProvider = PgProvider.TOSS;
-        this.paymentStatus = PaymentStatus.PENDING;
+        this.status = Status.UNPAID;
     }
 
-    /* ========= 생성 ========= */
-
-    /*
-     * 결제 생성
-     * - Payment는 항상 PENDING 상태로만 생성된다.
-     * - 금액(amount) 변경 불가
-     */
     public static Payment create(String orderId, Long userId, BigDecimal amount) {
         if (orderId == null) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_INVALID_ORDER_ID);
         }
-
-        String paymentId = UUID.randomUUID().toString();  // TODO: 규칙 만들기
-
-        return new Payment(
-                paymentId,
-                userId,
-                orderId,
-                amount
-        );
+        return new Payment(UUID.randomUUID().toString(), orderId, userId, amount);
     }
 
-    /*
-     * 결제 소유자 검증
-     */
+    public PaymentAttempt prepareAttempt() {
+        validateUnpaid();
+        validateNoPendingAttempt();
+
+        PaymentAttempt attempt = PaymentAttempt.create(this);
+        this.attempts.add(attempt);
+        return attempt;
+    }
+
+    public Optional<PaymentAttempt> getPendingAttempt() {
+        return attempts.stream()
+                .filter(PaymentAttempt::isPending)
+                .findFirst();
+    }
+
+    public void approve(String attemptId, String paymentKey, BigDecimal approvedAmount) {
+        PaymentAttempt attempt = getAttempt(attemptId);
+        validateUnpaid();
+        validatePendingAttempt(attempt);
+        validateAmount(approvedAmount);
+        attempt.approve(paymentKey);
+        this.status = Status.PAID;
+        this.paidAt = LocalDateTime.now();
+    }
+
+    public void fail(PaymentAttempt attempt) {
+        validateUnpaid();
+        validatePendingAttempt(attempt);
+        attempt.fail();
+    }
+
+    public void cancel() {
+        validatePaid();
+        this.status = Status.CANCELED;
+        this.canceledAt = LocalDateTime.now();
+    }
+
+    public void refund() {
+        validatePaid();
+        this.status = Status.REFUNDED;
+        this.refundedAt = LocalDateTime.now();
+    }
+
     public void validateOwner(Long userId) {
         if (!Objects.equals(this.userId, userId)) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_ACCESS_DENIED);
         }
     }
 
-    /*
-     * 주문 식별자 검증
-     */
     public void validateOrder(String orderId) {
         if (!Objects.equals(this.orderId, orderId)) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_ORDER_MISMATCH);
         }
     }
 
-    /*
-     * 재시도 가능 여부 검증
-     * - APPROVED, CANCELED, REFUNDED 상태의 Payment는 재결제할 수 없다
-     */
-    public boolean blocksNewAttempt() {
-        return paymentStatus == PaymentStatus.APPROVED
-                || paymentStatus == PaymentStatus.CANCELED
-                || paymentStatus == PaymentStatus.REFUNDED;
-    }
-
-    public boolean isPending() {
-        return paymentStatus == PaymentStatus.PENDING;
-    }
-
-    /**
-     * 결제 승인
-     * - Payment amount는 승인된 금액과 일치해야 한다
-     * - 이미 처리된 paymentKey로 다시 승인할 수 없다.
-     * - PENDING -> APPROVED
-     */
-    public void approve(
-            String paymentKeyFromPG,
-            BigDecimal approvedAmount
-    ) {
-        validatePending();
-        validateAmount(approvedAmount);
-        validatePaymentKeyNotAssigned();
-
-        this.paymentStatus = PaymentStatus.APPROVED;
-        this.paymentKey = paymentKeyFromPG;
-        this.approvedAt = LocalDateTime.now();
-    }
-
-    /*
-     * 결제 실패
-     * - PENDING 상테에서만 가능
-     * - PENDING -> FAILED
-     */
-    public void fail() {
-        validatePending();
-        this.paymentStatus = PaymentStatus.FAILED;
-    }
-
-    /*
-     * 결제 취소 (카드사 매입 전)
-     * - APPROVED 상태에서만 가능
-     * - 결과: 상태=CANCELED
-     */
-    public void cancel() {
-        validateApproved();
-        this.paymentStatus = PaymentStatus.CANCELED;
-        this.canceledAt = LocalDateTime.now();
-    }
-
-    /*
-     * 결제 환불 (카드사 매입 후)
-     * - APPROVED 상태에서만 가능
-     * - 결과: 상태=REFUNDED
-     */
-    public void refund() {
-        validateApproved();
-        this.paymentStatus = PaymentStatus.REFUNDED;
-        this.refundedAt = LocalDateTime.now();
-    }
-
-
-    /* ========= 검증 ========= */
-
-    /*
-     * Payment가 PENDING 상태인지 확인
-     */
-    private void validatePending() {
-        if (this.paymentStatus != PaymentStatus.PENDING) {
-            throw new BusinessException(PaymentErrorCode.PAYMENT_NOT_PENDING);
+    public void validateUnpaid() {
+        if (status != Status.UNPAID) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
         }
     }
 
-    /*
-     * Payment가 APPROVED 상태인지 확인
-     */
-    private void validateApproved() {
-        if (this.paymentStatus != PaymentStatus.APPROVED) {
+    private void validatePaid() {
+        if (status != Status.PAID) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_NOT_APPROVED);
         }
     }
 
-    /*
-     * 승인된 금액과 Payment.amount가 동일한지 확인
-     */
+    private void validateNoPendingAttempt() {
+        if (getPendingAttempt().isPresent()) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_RETRY_NOT_ALLOWED);
+        }
+    }
+
+    private void validatePendingAttempt(PaymentAttempt attempt) {
+        if (attempt == null || !attempts.contains(attempt) || !attempt.isPending()
+                || !Objects.equals(id, attempt.getPaymentId())) {
+            throw new BusinessException(PaymentErrorCode.PAYMENT_NOT_PENDING);
+        }
+    }
+
     private void validateAmount(BigDecimal approvedAmount) {
-
-        boolean isAmountMismatched = this.amount.compareTo(approvedAmount) != 0;
-
-        if (isAmountMismatched) {
+        if (amount.compareTo(approvedAmount) != 0) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
     }
 
-    /*
-     * 이미 paymentKey가 할당된 경우 중복 승인 방지
-     */
-    private void validatePaymentKeyNotAssigned() {
-        if (this.paymentKey != null) {
-            throw new BusinessException(PaymentErrorCode.PAYMENT_ALREADY_APPROVED);
-        }
+    private PaymentAttempt getAttempt(String attemptId) {
+        return attempts.stream()
+                .filter(attempt -> Objects.equals(attempt.getId(), attemptId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
     }
+
+    public enum Status { UNPAID, PAID, CANCELED, REFUNDED }
 }
