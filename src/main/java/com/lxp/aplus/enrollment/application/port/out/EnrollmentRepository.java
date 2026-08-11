@@ -17,6 +17,8 @@ public interface EnrollmentRepository {
 
     Optional<Enrollment> findById(Long id);
 
+    Optional<Enrollment> findByOrderItemId(Long orderItemId);
+
     boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
 
     Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);

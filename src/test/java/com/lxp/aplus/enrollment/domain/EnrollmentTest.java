@@ -37,6 +37,20 @@ class EnrollmentTest {
         assertThatThrownBy(() -> Enrollment.create(STUDENT_ID, null, 1L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.INVALID_ARGUMENT);
+
+        assertThatThrownBy(() -> Enrollment.create(STUDENT_ID, COURSE_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.INVALID_ARGUMENT);
+    }
+
+    @Test
+    @DisplayName("학생과 강좌가 모두 같을 때만 동일한 수강 요청으로 판단한다")
+    void matches_comparesStudentAndCourse() {
+        Enrollment enrollment = Enrollment.create(STUDENT_ID, COURSE_ID, 1L);
+
+        assertThat(enrollment.matches(STUDENT_ID, COURSE_ID)).isTrue();
+        assertThat(enrollment.matches(2L, COURSE_ID)).isFalse();
+        assertThat(enrollment.matches(STUDENT_ID, 200L)).isFalse();
     }
 
     @Test
